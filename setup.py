@@ -2,7 +2,7 @@ from setuptools import setup, find_namespace_packages
 
 from openpyweb import Version
 
-with open("README.md", "r") as fd:
+with open("README.md", "r", encoding="utf8") as fd:
     longdescription = fd.read()
 
 
