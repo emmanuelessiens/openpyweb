@@ -5,7 +5,6 @@
 # Maintainer Email: emmanuelessiens@outlook.com
 # Created by Emmanuel Essien on 2019.
 ###
-import cgitb
 import base64
 import traceback
 import cgi
@@ -50,33 +49,34 @@ except Exception as err:
     import httplib as htp
     import urllib2 as urllib
 
+try:
+    import imp as im
+except Exception as err:
+    import importlib as im
+    
 varb = Variable()
 
+port = 80
+
+def load_source(modname, filename):
+    import types
+    with open(filename, "rb") as f:
+        mod = types.ModuleType(modname)
+        exec(f.read(), mod.__dict__)
+    return mod
 
 def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port="", pr=False):
     server = HTTPServer
 
-    path = str(path).replace(
-        "\\", "/") if path != "" else str(os.getcwd()).replace("\\", "/")
+    path = str(path).replace("\\", "/") if path != "" else str(os.getcwd()).replace("\\", "/")
 
     spes = "/"
-    vpath = ""
-
-    try:
-        import imp as im
-    except Exception as err:
-        import importlib as im
-
-    mimetype = ""
     sys.path.insert(0, os.path.dirname(__file__))
     os.chdir(path)
-
-    cookie_v = cook
 
     class httpv(BaseHTTPRequestHandler):
 
         def do_GET(self):
-
             path_info = self.path
             
             
@@ -89,75 +89,80 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                 }
             )
             if self.path == spes:
-                if os.path.isfile(str(path) + spes + "public" + spes + "index.py") == True:
-                    vpath = "public" + spes + "index.py"
+                if os.path.isfile(os.path.join(str(path),"public", "index.py")) == True:
+                    vpath = os.path.join("public", "index.py")
 
-                elif os.path.isfile(str(path) + spes + "public" + spes + "home.py") == True:
-                    vpath = "public" + spes + "home.py"
-                elif os.path.isfile(str(path) + spes + "public" + spes + "default.py") == True:
-                    vpath = "public" + spes + "default.py"
-
-                App = im.load_source('App.App', path + spes + vpath)
+                elif os.path.isfile(os.path.join(str(path),"public", "home.py")) == True:
+                    vpath = os.path.join("public", "home.py")
+                elif os.path.isfile(os.path.join(str(path),"public", "default.py")) == True:
+                    vpath = os.path.join("public", "default.py")
+                try:
+                    App = im.load_source('App.App', os.path.join(path,vpath))
+                    App = App.App
+                except:
+                    App = load_source('App.App', os.path.join(path,vpath))
+                    App = App.App()
+                    
                 mimetype = 'text/html'
-                if "." not in path_info :
-                    
-                    
-                    App.App.put(method="GET", accept_lang=self.headers["Accept-Language"],
+                if "." not in path_info:
+                    App.put(method="GET", accept_lang=self.headers["Accept-Language"],
                             http_connect=self.headers["Connection"], http_user_agt=self.headers["User-Agent"],
                             http_encode=self.headers["Accept-Encoding"], path=path, host=host, port=port,
                             para=path_info, remoter_addr=self.client_address[
                                 0], remoter_port=self.client_address[1],
-                            script_file=str(
-                                path) + str(spes) + (vpath), server_proto=server_pro, server_ver=self.server_version,
+                            script_file=os.path.join(path, vpath), server_proto=server_pro, server_ver=self.server_version,
                             protocol_ver=self.protocol_version)
-                    runs_response = App.App.runs(formData=form)
+                    runs_response = App.runs(formData=form, cook=self.headers.get('Cookie'))
                     if isinstance(runs_response, tuple) == True:
-
-                        if str(runs_response[0]) == "404" or str(runs_response[0]) == "405" or str(
-                                runs_response[0]) == "400":
+                        
+                        if str(runs_response[0]) == "404" or str(runs_response[0]) == "405" or str(runs_response[0]) == "400":
 
                             self.error(runs_response[0], runs_response[1])
 
-                        elif str(runs_response[0]) == "307":
+                        if str(runs_response[0]) == "307":
 
                             self.redirect(runs_response[0], runs_response[1])
-                        else:
+                        
+                        if str(runs_response[0]) == "301":
 
-                            self.rendering(mimetype=mimetype,
-                                        content=runs_response)
-
-                    else:
-                        self.rendering(mimetype=mimetype, content=runs_response)
+                            self.referer(runs_response[0], runs_response[1])
+                            
+                    self.rendering(mimetype=mimetype, content=runs_response)
 
             elif self.path != spes:
 
                 if "." not in str(self.path):
 
                     if str(self.path) != "":
-                        if os.path.isfile(str(path) + spes + "public" + spes + "index.py") == True:
-                            vpath = "public" + spes + "index.py"
+                        if os.path.isfile(os.path.join(str(path), "public", "index.py")) == True:
+                            vpath = os.path.join("public","index.py")
 
-                        elif os.path.isfile(str(path) + spes + "public" + spes + "home.py") == True:
-                            vpath = "public" + spes + "home.py"
+                        elif os.path.isfile(os.path.join(str(path), "public","home.py")) == True:
+                            vpath = os.path.join("public","home.py")
 
-                        elif os.path.isfile(str(path) + spes + "public" + spes + "default.py") == True:
+                        elif os.path.isfile(os.path.join(str(path),"public","default.py")) == True:
 
-                            vpath = "public" + spes + "default.py"
+                            vpath = os.path.join("public","default.py")
 
-                        App = im.load_source('App.App', path + spes + vpath)
+                        try:
+                            App = im.load_source('App.App', os.path.join(path,vpath))
+                            App = App.App
+                        except:
+                            App = load_source('App.App', os.path.join(path,vpath))
+                            App = App.App()
                         mimetype = 'text/html'
                         if "." not in path_info:
                             
                             
-                            App.App.put(method="GET", accept_lang=self.headers["Accept-Language"],
+                            App.put(method="GET", accept_lang=self.headers["Accept-Language"],
                                         http_connect=self.headers["Connection"], http_user_agt=self.headers["User-Agent"],
                                         http_encode=self.headers["Accept-Encoding"], path=path, host=host, port=port,
                                         para=path_info, remoter_addr=self.client_address[0],
-                                        remoter_port=self.client_address[1], script_file=str(
-                                path) + str(spes) + (vpath), server_proto=server_pro, server_ver=self.server_version,
+                                        remoter_port=self.client_address[1], script_file=os.path.join(
+                                path, vpath), server_proto=server_pro, server_ver=self.server_version,
                                 protocol_ver=self.protocol_version)
 
-                            runs_response = App.App.runs(formData=form)
+                            runs_response = App.runs(formData=form, cook=self.headers.get('Cookie'))
                             if isinstance(runs_response, tuple) == True:
 
                                 if str(runs_response[0]) == "404" or str(runs_response[0]) == "405" or str(
@@ -165,18 +170,18 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
 
                                     self.error(runs_response[0], runs_response[1])
 
-                                elif str(runs_response[0]) == "307":
+                                if str(runs_response[0]) == "307":
 
                                     self.redirect(
                                         runs_response[0], runs_response[1])
-                                else:
+                                    
+                                if str(runs_response[0]) == "301":
 
-                                    self.rendering(mimetype=mimetype,
-                                                content=runs_response)
+                                    self.referer(runs_response[0], runs_response[1])
 
-                            else:
-                                self.rendering(mimetype=mimetype,
-                                            content=runs_response)
+                            self.rendering(mimetype=mimetype, content=runs_response)
+
+
 
             if self.path.endswith('favicon.ico'):
                 return
@@ -194,18 +199,23 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
 
             except Exception as err:
                 if self.path.endswith(self.path):
-                    if os.path.isfile(str(path) + spes + "public" + spes + "index.py") == True:
-                        vpath = "public" + spes + "index.py"
+                    if os.path.isfile(os.path.join(str(path),"public","index.py"))== True:
+                        vpath = os.path.join("public","index.py")
 
-                    elif os.path.isfile(str(path) + spes + "public" + spes + "home.py") == True:
-                        vpath = "public" + spes + "home.py"
+                    elif os.path.isfile(os.path.join(str(path),"public", "home.py")) == True:
+                        vpath = os.path.join("public","home.py")
 
-                    elif os.path.isfile(str(path) + spes + "public" + spes + "default.py") == True:
-                        vpath = "public" + spes + "default.py"
+                    elif os.path.isfile(os.path.join(str(path),"public", "default.py")) == True:
+                        vpath = os.path.join("public","default.py")
 
-                    App = im.load_source('App.App', path + spes + vpath)
+                    try:
+                        App = im.load_source('App.App', os.path.join(path,vpath))
+                        App = App.App
+                    except:
+                        App = load_source('App.App', os.path.join(path,vpath))
+                        App = App.App()
                     code = "500"
-                    App.App.put(status=code)
+                    App.put(status=code)
                     pth = str(os.path.dirname(
                         os.path.abspath(__file__))).replace("\\", "/")
                     f = open(pth + "/cmd/errd/index.html", "r")
@@ -214,6 +224,7 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                     self.wfile.write(bytes(str(content).encode()))
 
         def do_POST(self):
+
             path_info = self.path
            
             form = cgi.FieldStorage(
@@ -226,29 +237,48 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
             )
 
             # text/plain; charset=utf-8
-            if os.path.isfile(str(path) + spes + "public" + spes + "index.py") == True:
-                vpath = "public" + spes + "index.py"
+            if os.path.isfile(os.path.join(str(path),"public", "index.py")) == True:
+                vpath = os.path.join("public","index.py")
 
-            elif os.path.isfile(str(path) + spes + "public" + spes + "home.py") == True:
-                vpath = "public" + spes + "home.py"
+            elif os.path.isfile(os.path.join(str(path),"public", "home.py")) == True:
+                vpath = os.path.join("public", "home.py")
 
             else:
-                vpath = "public" + spes + "default.py"
+                vpath = os.path.join("public", "default.py")
 
-            App = im.load_source('App.App', path + spes + vpath)
+            try:
+                App = im.load_source('App.App', os.path.join(path,vpath))
+                App = App.App
+            except:
+                App = load_source('App.App', os.path.join(path,vpath))
+                App = App.App()
+                            
             mimetype = 'text/html'
             if "." not in path_info :
                 
                 
-                App.App.put(method="POST", accept_lang=self.headers["Accept-Language"],
+                App.put(method="POST", accept_lang=self.headers["Accept-Language"],
                             http_connect=self.headers["Connection"], http_user_agt=self.headers["User-Agent"],
                             http_encode=self.headers["Accept-Encoding"], path=path, host=host, port=port, para=path_info,
-                            remoter_addr=self.client_address[0], remoter_port=self.client_address[1], script_file=str(
-                    path) + str(spes) + (vpath), server_proto=server_pro, server_ver=self.server_version,
+                            remoter_addr=self.client_address[0], remoter_port=self.client_address[1], script_file=os.path.join(path, vpath), server_proto=server_pro, server_ver=self.server_version,
                     protocol_ver=self.protocol_version)
+                
+                runs_response = App.runs(formData=form, cook=self.headers.get('Cookie'))
+                if isinstance(runs_response, tuple) == True:
+                        
+                        if str(runs_response[0]) == "404" or str(runs_response[0]) == "405" or str(runs_response[0]) == "400":
 
-                self.rendering(mimetype=mimetype, code=200,
-                            content=App.App.runs(formData=form))
+                            self.error(runs_response[0], runs_response[1])
+
+                        if str(runs_response[0]) == "307":
+
+                            self.redirect(runs_response[0], runs_response[1])
+                        
+                        if str(runs_response[0]) == "301":
+
+                            self.referer(runs_response[0], runs_response[1])
+                            
+                self.rendering(mimetype=mimetype, code=200, content=App.runs(formData=form, cook=self.headers.get('Cookie')))
 
         def do_HEAD(self):
             self.do_GET()
@@ -290,6 +320,14 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
             self.send_error(
                 code=int(code), message=HTTP_CODE.get(code, ""))
             self.end_headers()
+        
+        def referer(self, code, re_url, code_re=307):
+            self.send_response(int(code_re))
+            self.send_header('Location', "{re_url}".format(re_url=re_url))
+            self.send_error(code=int(307), message=HTTP_CODE.get(code, ""))
+            self.end_headers()
+            
+            
 
     class ThreadedHTTPServer(ThreadingMixIn, server):
         """Moomins live here"""

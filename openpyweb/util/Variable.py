@@ -146,7 +146,6 @@ class Variable:
             return self.update(dict(upd))
         else:
             return os.environ.setdefault(str(key), str(value))
-    
               
     def update(self, value=dict):
         return os.environ.update(value)

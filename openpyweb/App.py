@@ -81,6 +81,7 @@ class App(env, Config, Variable):
         self.languages = ""
         self.Driver = ""
         self.formData = None
+        self.cookData = None
         self.datag = {}
 
     def getRouters(self):
@@ -90,9 +91,10 @@ class App(env, Config, Variable):
     def getPath(self):
         return self.getpath
 
-    def runs(self, formData=None):
+    def runs(self, formData=None, cook=None):
 
         self.formData = formData
+        self.cookData = cook
         return self.initial()
 
     def initial(self):
@@ -324,7 +326,7 @@ class App(env, Config, Variable):
     def strMethod(self, p, c=None, mv=None):
         gmodule = []
         Request = self.Request(prform=self.formData)
-        Session = self.Session()
+        Session = self.Session()#prsee=self.cookData
         
         try:
             m = mv.split("?")[0]
@@ -386,7 +388,7 @@ class App(env, Config, Variable):
             print("Location: {location}".format(location=location_d))
             print()
 
-    def referer(self, location='/', link=False, code="307", lang=False):
+    def referer(self, location='/', link=False, code="301", lang=False):
         if self.out("SERVER_SOFTWARE") == AUTHOR:
             if link == True:
                 location_d = self.URL(location, lang)
@@ -394,7 +396,7 @@ class App(env, Config, Variable):
                 location_d = location
             self.put(status=code)
             self.put(referral=self.out('HTTP_REFERER', location_d))
-            return code, self.out('HTTP_REFERER', location_d)
+            return code, self.out('HTTP_REFERER', location_d) if self.out('HTTP_REFERER', location_d) != "" else location_d
         else:
             if link == True:
                 location_d = self.URL(location, lang)

@@ -40,161 +40,127 @@ class Session(Variable):
 
     def has(self, key=""):
         bool_v = False
-        if self.out("SERVER_SOFTWARE") == AUTHOR:
-            session_dict = self._get()
-            if len(session_dict) > 0:
-                if session_dict.get(key, "") != "":
-                    bool_v = True
-                elif session_dict.get(' {key}'.format(key=key), "") != "":
-                    bool_v = True
-                else:
-                    bool_v = False
-            else:
-                bool_v = False
+        
+        if self.get(key) != "" and self.get(key) != None:
+
+            bool_v = True
         else:
-
-            if self.get(key) != "" and self.get(key) != None:
-
-                bool_v = True
-            else:
-                bool_v = False
+            bool_v = False
 
         return bool_v
 
     def set(self, key="", value="", duration=3600, url="", path="/",  samesite="", httponly=False, secure=False, max_age="", encrypt = False):
         _value = Crypt._encode(value) if encrypt == True else value
-        if self.out("SERVER_SOFTWARE") == AUTHOR:
-            session_string = str(key) + "=" + _value
-            return self._xset(session_string)
-        else:
-            return self._set(key, _value, duration, url, path, samesite, httponly, secure, max_age)
+        return self._set(key, _value, duration, url, path, samesite, httponly, secure, max_age)
         
 
     def _set(self, key="", value="", duration=3600, url="", path="/", samesite="", httponly=False, secure=False, max_age="")->bool:
         
-        url_v = self.out("HTTP_HOST") + str(":") + str(self.out("SERVER_PORT", '')) if self.out(
-            "HTTP_HOST") == "localhost" or self.out("HTTP_HOST") == "127.0.0.1" else self.out("HTTP_HOST")
+        
+            
+        url_v = self.out("HTTP_HOST") + str(":") + str(self.out("SERVER_PORT", '')) if self.out("HTTP_HOST") == "localhost" or self.out("HTTP_HOST") == "127.0.0.1" else self.out("HTTP_HOST")
         url = url if url != "" else url_v
-        expires = datetime.datetime.now(
-        datetime.UTC) + datetime.timedelta(minutes=duration)
-        cooKeys = cook.SimpleCookie(self.out(self.s_string))
-        cooKeys[str(key)] = value
-        cooKeys[str(key)]['domain'] = url
-        cooKeys[str(key)]['path'] = path
-        cooKeys[str(key)]['samesite'] = samesite
-        cooKeys[str(key)]['httponly'] = httponly
-        cooKeys[str(key)]['secure'] = secure
-        cooKeys[str(key)]['max-age'] = max_age
-        cooKeys[str(key)]['expires'] = expires.strftime('%a, %d %b %Y %H:%M:%S')
-        print(cooKeys[str(key)])
-        time.sleep(1)
+        expires = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=duration)
+        
+        if self.out("SERVER_SOFTWARE") == AUTHOR:
+            self._xset(f"{key}={value}")
+        else:
+            cooKeys = cook.SimpleCookie(self.out(self.s_string))
+            cooKeys[str(key)] = value
+            cooKeys[str(key)]['domain'] = url
+            cooKeys[str(key)]['path'] = path
+            cooKeys[str(key)]['samesite'] = samesite
+            cooKeys[str(key)]['httponly'] = httponly
+            cooKeys[str(key)]['secure'] = secure
+            cooKeys[str(key)]['max-age'] = max_age
+            cooKeys[str(key)]['expires'] = expires.strftime('%a, %d %b %Y %H:%M:%S')
+            print(cooKeys[str(key)])
+        time.sleep(0.5)
         return True
 
+    def _xset(self, session_string=""):
+        if session_string != "":
+            if self.s_string not in self.see():
+                return self.default(self.s_string, session_string)
+            else:
+                self.session_list.append(session_string)
+                return self._update(self.unqiue(self.session_list))
+        else:
+            return False
+        
     def get(self, key=""):
+        OsEnviron = self.out(self.s_string)
         if self.out("SERVER_SOFTWARE") == AUTHOR:
-            session_dict = self._get()
-
-            if len(session_dict) > 0:
-                if session_dict.get(key, "") != None or session_dict.get(key, "") != "":
-                    
-                    if Crypt._isbase(session_dict.get(key, "")) == True:
-                        try:
-                            return ast.literal_eval(Crypt._decode(session_dict.get(key, "")))
-                        except Exception as err:
-                            return Crypt._decode(session_dict.get(key, ""))
-                    else:
-                        return session_dict.get(key, "")
+            cooKeys = cook.SimpleCookie()
+        else:
+            cooKeys = cook.SimpleCookie(OsEnviron)
+        cooKeys.load(OsEnviron)
+        
+        #
+        if OsEnviron != None:
+            if key in cooKeys:
+                if cooKeys[key].value != None or cooKeys[key].value != "":
                         
-                elif session_dict.get(' {key}'.format(key=key), "") != None or session_dict.get(
-                        ' {key}'.format(key=key), "") != "":
-                    
-                    if Crypt._isbase(session_dict.get(' {key}'.format(key=key), "")) == True:
+                    if Crypt._isbase(cooKeys[key].value) == True:
                         try:
-                            return ast.literal_eval(Crypt._decode(session_dict.get(' {key}'.format(key=key), "")))
+                            return ast.literal_eval(Crypt._decode(cooKeys[key].value))
                         except Exception as err:
-                            return Crypt._decode(session_dict.get(' {key}'.format(key=key), ""))
+                            return Crypt._decode(cooKeys[key].value)
                     else:
-                        return session_dict.get(' {key}'.format(key=key), "")
+                        return cooKeys[key].value
                 else:
                     return ""
             else:
                 return ""
         else:
-            cooKeys = cook.SimpleCookie()
-            OsEnviron = self.out(self.s_string)
-            if OsEnviron != None:
-                cooKeys.load(OsEnviron)
-                if key in cooKeys:
-
-                    if cooKeys[key].value != None or cooKeys[key].value != "":
-                        
-                        if Crypt._isbase(cooKeys[key].value) == True:
-                            try:
-                                return ast.literal_eval(Crypt._decode(cooKeys[key].value))
-                            except Exception as err:
-                                return Crypt._decode(cooKeys[key].value)
-                        else:
-                            return cooKeys[key].value
-                    else:
-                        return ""
-                else:
-                    return ""
-            else:
-                return ""
+            return ""
 
     def destroy(self, key="", path= "/"):
         bool_v = False
         if self.out("SERVER_SOFTWARE") == AUTHOR:
-
-            session_result = self._delete(key)
-            if session_result[0] == True:
-                self._reset(session_result[1])
-                bool_v = True
-            else:
-                bool_v = False
-
+            cooKeys = cook.SimpleCookie()
+            cooKeys.load(self.out(self.s_string))
         else:
             cooKeys = cook.SimpleCookie(self.out(self.s_string))
-            if PYVERSION_MA >= 3:
+            
+        if PYVERSION_MA >= 3:
 
-                cookv = cooKeys.items()
+            cookv = cooKeys.items()
+        else:
+            cookv = cooKeys.iteritems()
+            
+        bool_vx = False
+        
+        if self.s_string in os.environ:
+            if key !="":
+                if self.get(key) != "":
+                    duration = 3600 * 30 * 1000
+                    self._set(key=key, duration=-duration, path=path)
+                    bool_vx = True
+                    bool_v = bool_vx
+
             else:
-                cookv = cooKeys.iteritems()
 
-            self.out(self.s_string)
+                for key, v in cookv:
 
-            bool_vx = False
-            if self.s_string in os.environ:
-                if key !="":
-                    
                     if self.get(key) != "":
-                        duration = 3600 * 30 * 1000
-                        self._set(key=key, duration=-duration, path=path)
+                        duration = 3600 * 33 * 1000
+
+                        self._set(key=key, duration=-duration)
                         bool_vx = True
-                    bool_v = bool_vx
-
-                else:
-
-                    for key, v in cookv:
-
-                        if self.get(key) != "":
-                            duration = 3600 * 33 * 1000
-
-                            self._set(key=key, duration=-duration)
-                            bool_vx = True
-                    bool_v = bool_vx
-            else:
+                bool_v = bool_vx
+        else:
                 bool_v = False
         return bool_v
 
     def _xset(self, session_string=""):
         if session_string != "":
             if self.s_string not in self.see():
-                self.default(self.s_string, session_string)
-
+                _cook = self.default(self.s_string, session_string)
             else:
                 self.session_list.append(session_string)
-                self._update(self.unqiue(self.session_list))
+                _cook = self._update(self.unqiue(self.session_list))
+            return _cook
         else:
             return False
 
@@ -228,32 +194,7 @@ class Session(Variable):
             return ";".join(re_unique)
         except Exception as err:
             return initial_session
-
-    def _delete(self, session_key=""):
-
-        get_session = self._get()
-        response = None
-        if len(get_session) > 0:
-            if len(session_key) > 0:
-
-                try:
-                    get_session.pop(session_key, None)
-                    self._update(get_session)
-                    response = True
-
-                except Exception as err:
-                    response = False
-            else:
-                try:
-                    for k in dict(get_session):
-                        get_session.pop(k, None)
-                    response = True
-                except Exception as err:
-                    response = False
-        else:
-            response = False
-        return response, get_session
-
+        
     def _reset(self, session_dict=dict()):
 
         session_list = []
@@ -267,25 +208,4 @@ class Session(Variable):
 
         return self._update(";".join(session_list))
 
-    def _get(self):
-
-        session_dict = {}
-        session_string = ""
-        try:
-            session_string = self.out(self.s_string)
-        except Exception as err:
-
-            session_dict = {}
-        try:
-            for c_g in session_string.split(";"):
-                k, v = c_g.split("=")
-                session_dict.update({str(k): str(v)})
-        except Exception as err:
-            try:
-                k, v = session_string.split("=")
-                session_dict.update({str(k): str(v)})
-            except Exception as err:
-                session_dict = {}
-        return session_dict
-
-    
+   
