@@ -1,8 +1,9 @@
 from openpyweb import serv
 import os
 
-LOCAL_PORT = 6060
-
-port = int(os.environ.get("PORT", LOCAL_PORT))
-host = "localhost" if os.environ.get("PORT") == None else ""
-serv.run(host=host, port=port)
+try:
+    port = serv.port
+    host = "localhost"
+    serv.run(host=host, port=port)
+except KeyboardInterrupt as e:
+    serv.terminated()

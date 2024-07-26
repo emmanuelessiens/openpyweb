@@ -53,11 +53,14 @@ try:
     import imp as im
 except Exception as err:
     import importlib as im
-    
+
 varb = Variable()
 
 port = 80
 
+
+global response_code
+redirect_code = ["500", "400", "404", "405", "451", "301", "302", "307"]
 def load_source(modname, filename):
     import types
     with open(filename, "rb") as f:
@@ -78,8 +81,8 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
 
         def do_GET(self):
             path_info = self.path
-            
-            
+            _cookies = self
+
             form = cgi.FieldStorage(
                 fp=self.rfile,
                 headers=self.headers,
@@ -98,36 +101,34 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                     vpath = os.path.join("public", "default.py")
                 try:
                     App = im.load_source('App.App', os.path.join(path,vpath))
-                    App = App.App
-                except:
+                except Exception as e:
                     App = load_source('App.App', os.path.join(path,vpath))
-                    App = App.App()
-                    
+                self._App = App.App()
+
+
                 mimetype = 'text/html'
                 if "." not in path_info:
-                    App.put(method="GET", accept_lang=self.headers["Accept-Language"],
+                    self._App.put(method="GET", accept_lang=self.headers["Accept-Language"],
                             http_connect=self.headers["Connection"], http_user_agt=self.headers["User-Agent"],
                             http_encode=self.headers["Accept-Encoding"], path=path, host=host, port=port,
                             para=path_info, remoter_addr=self.client_address[
                                 0], remoter_port=self.client_address[1],
                             script_file=os.path.join(path, vpath), server_proto=server_pro, server_ver=self.server_version,
                             protocol_ver=self.protocol_version)
-                    runs_response = App.runs(formData=form, cook=self.headers.get('Cookie'))
+                    runs_response = self._App.runs(formData=form, cook=_cookies)
                     if isinstance(runs_response, tuple) == True:
-                        
-                        if str(runs_response[0]) == "404" or str(runs_response[0]) == "405" or str(runs_response[0]) == "400":
+                        if str(runs_response[0]).isnumeric():
+                            if runs_response[0] in redirect_code:
+                                self.redirect(runs_response[0], runs_response[1])
+                            else:
+                                self.rendering(mimetype=mimetype, content=runs_response)
+                        if len(runs_response) == 4:
+                            self.setwriter(runs_response[1], runs_response[2], runs_response[3])
 
-                            self.error(runs_response[0], runs_response[1])
 
-                        if str(runs_response[0]) == "307":
 
-                            self.redirect(runs_response[0], runs_response[1])
-                        
-                        if str(runs_response[0]) == "301":
-
-                            self.referer(runs_response[0], runs_response[1])
-                            
-                    self.rendering(mimetype=mimetype, content=runs_response)
+                    else:
+                        self.rendering(mimetype=mimetype, content=runs_response)
 
             elif self.path != spes:
 
@@ -146,15 +147,14 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
 
                         try:
                             App = im.load_source('App.App', os.path.join(path,vpath))
-                            App = App.App
                         except:
                             App = load_source('App.App', os.path.join(path,vpath))
-                            App = App.App()
+                        self._App = App.App()
                         mimetype = 'text/html'
                         if "." not in path_info:
-                            
-                            
-                            App.put(method="GET", accept_lang=self.headers["Accept-Language"],
+
+
+                            self._App.put(method="GET", accept_lang=self.headers["Accept-Language"],
                                         http_connect=self.headers["Connection"], http_user_agt=self.headers["User-Agent"],
                                         http_encode=self.headers["Accept-Encoding"], path=path, host=host, port=port,
                                         para=path_info, remoter_addr=self.client_address[0],
@@ -162,24 +162,21 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                                 path, vpath), server_proto=server_pro, server_ver=self.server_version,
                                 protocol_ver=self.protocol_version)
 
-                            runs_response = App.runs(formData=form, cook=self.headers.get('Cookie'))
+                            runs_response = self._App.runs(formData=form, cook=_cookies)
+
                             if isinstance(runs_response, tuple) == True:
+                                if str(runs_response[0]).isnumeric():
+                                    if runs_response[0] in redirect_code:
+                                        self.redirect(runs_response[0], runs_response[1])
+                                    else:
+                                        self.rendering(mimetype=mimetype, content=runs_response)
+                                if len(runs_response) == 4:
+                                    self.setwriter(runs_response[1], runs_response[2], runs_response[3])
 
-                                if str(runs_response[0]) == "404" or str(runs_response[0]) == "405" or str(
-                                        runs_response[0]) == "400":
 
-                                    self.error(runs_response[0], runs_response[1])
+                            else:
+                                self.rendering(mimetype=mimetype, content=runs_response)
 
-                                if str(runs_response[0]) == "307":
-
-                                    self.redirect(
-                                        runs_response[0], runs_response[1])
-                                    
-                                if str(runs_response[0]) == "301":
-
-                                    self.referer(runs_response[0], runs_response[1])
-
-                            self.rendering(mimetype=mimetype, content=runs_response)
 
 
 
@@ -210,23 +207,18 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
 
                     try:
                         App = im.load_source('App.App', os.path.join(path,vpath))
-                        App = App.App
-                    except:
+                    except Exception as e:
                         App = load_source('App.App', os.path.join(path,vpath))
-                        App = App.App()
+                    self._App = App.App()
                     code = "500"
-                    App.put(status=code)
-                    pth = str(os.path.dirname(
-                        os.path.abspath(__file__))).replace("\\", "/")
-                    f = open(pth + "/cmd/errd/index.html", "r")
-                    content = str(f.read()).format(code=code, name=AUTHOR, message=HTTP_CODE.get(
-                        code, ""), version=VERSION_TEXT)
-                    self.wfile.write(bytes(str(content).encode()))
+                    self._App.put(status=code)
+                    _code, _url = self._App.errorP(code=code)
+                    self.redirect(_code, _url)
 
         def do_POST(self):
 
             path_info = self.path
-           
+            _cookies = self
             form = cgi.FieldStorage(
                 fp=self.rfile,
                 headers=self.headers,
@@ -248,37 +240,34 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
 
             try:
                 App = im.load_source('App.App', os.path.join(path,vpath))
-                App = App.App
             except:
                 App = load_source('App.App', os.path.join(path,vpath))
-                App = App.App()
-                            
+            self._App = App.App()
+
             mimetype = 'text/html'
             if "." not in path_info :
-                
-                
-                App.put(method="POST", accept_lang=self.headers["Accept-Language"],
+
+
+                self._App.put(method="POST", accept_lang=self.headers["Accept-Language"],
                             http_connect=self.headers["Connection"], http_user_agt=self.headers["User-Agent"],
                             http_encode=self.headers["Accept-Encoding"], path=path, host=host, port=port, para=path_info,
                             remoter_addr=self.client_address[0], remoter_port=self.client_address[1], script_file=os.path.join(path, vpath), server_proto=server_pro, server_ver=self.server_version,
                     protocol_ver=self.protocol_version)
-                
-                runs_response = App.runs(formData=form, cook=self.headers.get('Cookie'))
+
+                runs_response = self._App.runs(formData=form, cook=_cookies)
                 if isinstance(runs_response, tuple) == True:
-                        
-                        if str(runs_response[0]) == "404" or str(runs_response[0]) == "405" or str(runs_response[0]) == "400":
+                    if str(runs_response[0]).isnumeric():
 
-                            self.error(runs_response[0], runs_response[1])
-
-                        if str(runs_response[0]) == "307":
-
+                        if runs_response[0] in redirect_code:
                             self.redirect(runs_response[0], runs_response[1])
-                        
-                        if str(runs_response[0]) == "301":
+                        else:
+                            self.rendering(mimetype=mimetype, code=200, content=self._App.runs(formData=form, cook=_cookies))
+                    else:
+                        if len(runs_response) == 4:
+                            self.setwriter(runs_response[1], runs_response[2], runs_response[3])
 
-                            self.referer(runs_response[0], runs_response[1])
-                            
-                self.rendering(mimetype=mimetype, code=200, content=App.runs(formData=form, cook=self.headers.get('Cookie')))
+                else:
+                    self.rendering(mimetype=mimetype, code=200, content=self._App.runs(formData=form, cook=_cookies))
 
         def do_HEAD(self):
             self.do_GET()
@@ -286,52 +275,63 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
         def do_PUT(self):
             self.do_POST()
 
-        def rendering(self, path="", mimetype="", mode='r', encoding="utf-8", content="", code=200):
-
-            self.send_response(int(code))
-            self.send_header('Content-type', mimetype)
-            self.end_headers()
-            if path != "":
-
-                f = open(path + self.path, mode)
-                readv = ""
-                if mode == "rb":
-                    readv = f.read()
-                else:
-                    readv = bytes(str(f.read()).encode('utf-8'))
-
-                self.wfile.write(readv)
-
-                f.close()
-
-            elif content != "":
+        def setwriter(self, code, content, mimetype="text/html"):
+            try:
+                self.send_response(int(code))
+                self.send_header('Content-type', mimetype)
+                self.end_headers()
                 self.wfile.write(bytes(str(content).encode()))
+            except Exception as e:
+                print(f'SetWriter Error: {e}')
+                pass
 
-        def error(self, code, e_url, code_re=307):
-            self.send_response(int(code_re))
-            self.send_header('Location', "{e_url}".format(e_url=e_url))
-            self.send_error(
-                code=int(code), message=HTTP_CODE.get(code, ""))
-            self.end_headers()
+        def setcookie(self, code, name, cooKeys):
+            self.send_response(int(code))
+            self.send_header("Content-type", "text/html")
+            for morsel in cooKeys.values():
+                self.send_header(name, morsel.OutputString())
+            #self.end_headers()
+
+        def rendering(self, path="", mimetype="", mode='r', encoding="utf-8", content="", code=200):
+            try:
+                self.send_response(int(code))
+                self.send_header('Content-type', mimetype)
+                self.end_headers()
+                if path != "":
+
+                    f = open(path + self.path, mode)
+                    readv = ""
+                    if mode == "rb":
+                        readv = f.read()
+                    else:
+                        readv = bytes(str(f.read()).encode('utf-8'))
+
+                    self.wfile.write(readv)
+
+                    f.close()
+
+                elif content != "":
+                    self.wfile.write(bytes(str(content).encode()))
+            except Exception as e:
+                print(f'Rendering Error: {e}')
+                pass
+
 
         def redirect(self, code, re_url, code_re=307):
-            self.send_response(int(code_re))
-            self.send_header('Location', "{re_url}".format(re_url=re_url))
-            self.send_error(
-                code=int(code), message=HTTP_CODE.get(code, ""))
-            self.end_headers()
-        
-        def referer(self, code, re_url, code_re=307):
-            self.send_response(int(code_re))
-            self.send_header('Location', "{re_url}".format(re_url=re_url))
-            self.send_error(code=int(307), message=HTTP_CODE.get(code, ""))
-            self.end_headers()
-            
-            
+            try:
+                self.send_response(int(code_re))
+                self.send_header("Content-type", "")
+                self.send_header('Location', "{re_url}".format(re_url=re_url))
+                self.send_error(code=int(code), message=HTTP_CODE.get(code, ""))
+                self.end_headers()
+            except Exception as e:
+                pass
+
+
+
 
     class ThreadedHTTPServer(ThreadingMixIn, server):
         """Moomins live here"""
-
     hostname = ssl_ip if ssl_ip != "" else host
     portnumber = int(ssl_port) if ssl_port != "" else int(port)
     vars_http = ""
@@ -369,3 +369,6 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
         server.server_close()
     except Exception as err:
         print(bold(red("Something went wrong: Default port already in use")))
+
+def terminated():
+    return exit('Server Terminated')

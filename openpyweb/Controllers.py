@@ -129,7 +129,7 @@ class Controllers(env, Config):
                             if i == 1:
                                 self.controllers = s
                                 path_parts.append(path_parts.pop(-1))
-                        
+
             except Exception as err:
                 Log("").error(err)
 
@@ -142,7 +142,7 @@ class Controllers(env, Config):
                         if i == 1:
                             self.actions = s
                             path_parts.append(path_parts.pop(-1))
-                        
+
 
             # Get Path from URI / convert it to parameter
             list_params = []
@@ -266,11 +266,11 @@ class Controllers(env, Config):
                     for i, route_c in enumerate(route.route.getRouter()):
                         urlx = [self._getControllers(), self._getActions()]
                         url_i = []
-                        
+
                         for urli in urlx:
                             if urli in self._getUri():
                                 url_i.append(urli)
-                        
+
                         if "/".join(url_i) == route_c:
                             param_v = self._getR_params(route.route.getParams()[i], "/".join(url_i))
                             break
@@ -298,7 +298,7 @@ class Controllers(env, Config):
         for newuri in new_uri:
             if newuri not in popurl.split('/'):
                 lnewuri.append(newuri)
-            
+
         for i, para in enumerate(params):
 
             try:
@@ -354,4 +354,3 @@ class Controllers(env, Config):
                 self.parameter.update({name:value})
 
         return self.parameter
-

@@ -22,7 +22,7 @@ class Request(Variable):
 
     def __init__(self, prform=None):
         self.Controllers = Controllers()
-        self.para_vv ={} 
+        self.para_vv ={}
         if self.out("SERVER_SOFTWARE") == AUTHOR:
              self.attr = prform
         else:
@@ -30,41 +30,41 @@ class Request(Variable):
         self.method = self.out('REQUEST_METHOD', '')
 
     def get(self, key=0, error=0):
-        
-        try:
-            if 'GET' in self.out('REQUEST_METHOD'):
 
-                if key != 0:
+
+        if 'GET' == self.method:
+            if error == 1:
+                return self.attr
+
+            if key != 0:
+                try:
                     if (key in self.attr):
                         if self.attr.getvalue(key) != "":
                             return self.attr.getvalue(key)
                         else:
                             return self.param(key)
-                    elif error == 1:
-                        return self.attr
-                    else:
-                        return self.param(key)
-                else:
-                    return ""
+                except Exception as e:
+                    return self.param(key)
             else:
-                
-                Log('').warning("advise use POST instead of GET")
-                return False
-        except Exception as err:
-            Log('').warning(err)
-            return err
+                return ""
+        else:
+
+            Log('').warning("advise use POST instead of GET")
+            return ""
+
 
     def post(self, key=0, error=0):
         try:
-            if 'POST' in self.out('REQUEST_METHOD'):
+            if 'POST' == self.method:
+                if error == 1:
+                    return self.attr
+
                 if key != 0:
                     if (key in self.attr):
                         if self.attr.getvalue(key) != "":
                             return self.attr.getvalue(key)
                         else:
                             return self.param(key)
-                    elif error == 1:
-                        return self.attr
                     else:
                         return self.param(key)
                 else:
@@ -97,12 +97,27 @@ class Request(Variable):
         if None is not self.attr.keys():
             return self.attr.keys()
 
+    def _getparamuri(self):
+        _params = dict()
+        uri_sp = self.out("REQUEST_URI").split('?')
+        if len(uri_sp) > 1:
+            for uri_s in uri_sp:
+                _uri_x = str(uri_s).split('&')
+                for _uri_f in _uri_x:
+                    _url_e = _uri_f.split('=')
+                    if len(_url_e) > 1:
+                        _k, _v = _url_e[0], _url_e[1]
+                        _params[str(_k)] = _v
+        return _params
+
     def param(self, key=""):
-        self.para_vv = self.Controllers._getParams()
-        if key == "" or key == None:
-            result = self.para_vv  
+
+        if len(self.Controllers._getParams()) > 0:
+            self.para_vv = self.Controllers._getParams()
         else:
-            result =  self.para_vv.get(key, '') 
-        return result       
-       
-        
+            self.para_vv  = self._getparamuri()
+        if key == "" or key == None:
+            result = self.para_vv
+        else:
+            result =  self.para_vv.get(key, '')
+        return result
