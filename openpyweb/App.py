@@ -89,9 +89,9 @@ class App(env, Config, Variable):
     def getPath(self):
         return self.getpath
 
-    def runs(self, formData=None, cook=None):
+    def runs(self, formData=None, serverobj=None):
         self.formData = formData
-        self.server_obj = cook
+        self.server_obj = serverobj
         return self.initial()
 
     def initial(self):
@@ -298,7 +298,7 @@ class App(env, Config, Variable):
     def strMethod(self, p, c=None, mv=None):
         gmodule = []
         Request = self.Request(prform=self.formData)
-        Session = self.Session(prsee=self.server_obj) #prsee=self.server_obj
+        Session = self.Session(prsee=self.server_obj)
 
         try:
             m = mv.split("?")[0]

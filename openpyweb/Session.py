@@ -50,12 +50,12 @@ class Session(Variable):
 
         return bool_v
 
-    def set(self, key="", value="", res_code=302, duration=3600, url="", path="/",  samesite="", httponly=False, secure=False, max_age="", encrypt = False):
+    def set(self, key="", value=None, res_code=302, duration=3600, url="", path="/",  samesite="", httponly=False, secure=False, max_age="", encrypt = False):
         _value = Crypt._encode(value) if encrypt == True else value
         return self._set(key, _value, res_code, duration, url, path, samesite, httponly, secure, max_age)
 
 
-    def _set(self, key="", value="", res_code=302, duration=3600, url="", path="/", samesite="", httponly=False, secure=False, max_age="")->bool:
+    def _set(self, key="", value=None, res_code=302, duration=3600, url="", path="/", samesite="", httponly=False, secure=False, max_age="")->bool:
 
 
 
@@ -107,11 +107,11 @@ class Session(Variable):
                     else:
                         return cooKeys[key].value
                 else:
-                    return ""
+                    return None
             else:
-                return ""
+                return None
         else:
-            return ""
+            return None
 
     def destroy(self, key="", path= "/"):
         bool_v = False
@@ -153,18 +153,6 @@ class Session(Variable):
 
         return False
 
-    def _xset(self, session_string=""):
-        if session_string != "":
-            print('SEE ME', self.see())
-            if not self.s_string in self.see():
-                _cook = self.default(self.s_string, session_string)
-            else:
-                self.session_list.append(session_string)
-                _cook = self._update(self.unqiue(self.session_list))
-            return _cook
-        else:
-            return False
-
     def _update(self, session_string):
         dict_session = dict({self.s_string: session_string})
         try:
@@ -172,29 +160,6 @@ class Session(Variable):
             return True
         except Exception as e:
             return False
-
-    def unqiue(self, session_list=[]):
-
-        session_relist = []
-        for l_session in session_list:
-            session_string = str(l_session) + ";" + str(self.out(self.s_string, "")
-                                                        ) if self.out(self.s_string, "") != "" else str(l_session)
-            session_relist.append(session_string)
-
-        initial_session = str(session_relist).replace("[' ", "").replace("]", "").replace(',', ";").replace("'",
-                                                                                                            "").replace(
-            "[", "")
-        return self._unquie(initial_session)
-
-    def _unquie(self, initial_session=""):
-        try:
-            unique_session = initial_session.split(";")
-            re_unique = []
-            [re_unique.append(x) for x in unique_session if x not in re_unique]
-
-            return ";".join(re_unique)
-        except Exception as err:
-            return initial_session
 
     def _reset(self, session_dict=dict()):
 

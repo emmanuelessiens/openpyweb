@@ -10,7 +10,7 @@
 # Using Schema Pattern to controller callable funtions and methods
 # Each method represent query builder attribute
 ###
-    
+
 from openpyweb  import App, Version, Log
 
 app = App.App()
@@ -22,6 +22,7 @@ class Table:
         self.prefix = self.DB.prefix
         self.table = str(self.prefix) + str(table)
         self.tabledict = table
+        self.Qstring  = ""
         self.result = None
         self.rowCount = None
         self.table_from = ""
@@ -120,7 +121,7 @@ class Table:
             table=self.table,
             exists=self.table_exist,
             whereBetween=str(" WHERE") + self.table_whereBetween if len(self.table_whereBetween) > 0 else '',
-            whereand=self.table_whereand if len(self.table_whereand) > 0 else '',
+            whereand=" ".join(self.table_whereand) if len(self.table_whereand) > 0 else '',
             whereNotBetween=str(" WHERE") + self.table_whereNotBetween if len(self.table_whereNotBetween) > 0 else '',
             notexist=self.table_notexist,
             outerjoin=" ".join(self.table_outerjoin),
@@ -179,7 +180,7 @@ class Table:
 
     def whereAnd(self, variable="", sign="", string=""):
         string_type = "'{string}'".format(string=string) if (type(string) == str) == True else string
-        self.table_whereand = " AND {variable} {sign} {string}".format(variable=str(self.prefix)+str(variable), sign=sign, string=string_type)
+        self.table_whereand.append(" AND {variable} {sign} {string}".format(variable=str(self.prefix)+str(variable), sign=sign, string=string_type))
         return self
 
     def whereIn(self, variable, list=[]):
@@ -596,7 +597,7 @@ class Table:
 
 
 
-    
+
     def find(self, num=0):
         self.table_find = "SELECT * FROM {table} ".format(table=str(self.table))
         t_result = self.DB.query(self.table_find)
@@ -615,30 +616,30 @@ class Table:
                         lk = l[k]
                         if lk == num:
                             r=l
-            else:        
+            else:
                 r = ""
         else:
             r = t_result.Exception
-            
+
         return r
-        
+
     def update(self, data=[]):
         if (type(data) == list):
             if len(data) > 0:
                 value = []
                 column = []
                 for l in data:
-                    value.append(l) 
+                    value.append(l)
                     if Version.PYVERSION_MA <= 2:
                         lt = l.iteritems()
                     else:
                         lt = l.items()
-                    for k, v in lt: 
+                    for k, v in lt:
                         if k not in column:
                             column.append( '{k}="{v}"'.format(k=k, v=v))
-                        
+
                 lcolumn = ' , '.join(column)
-                
+
                 table_update ="UPDATE {table} SET {column} {where}".format(table=str(self.table),  column=lcolumn, where=str(" WHERE") + str("AND".join(self.table_where)) if len(self.table_where) > 0 else '')
                 t_result = self.DB.query(table_update)
                 return t_result.save() if t_result.Exception == "" else t_result.Exception
@@ -646,7 +647,7 @@ class Table:
                 return "Empty Data"
         else:
             return "Only Accepts type list"
-        
+
     def updates(self, data=[]):
         if (type(data) == list):
             if len(data) > 0:
@@ -680,20 +681,20 @@ class Table:
                 value = []
                 column = []
                 for l in data:
-                    value.append(l) 
+                    value.append(l)
                     if Version.PYVERSION_MA <= 2:
                         lt = l.iteritems()
                     else:
                         lt = l.items()
                     for k, v in lt:
-                        if k not in column: 
+                        if k not in column:
                             column.append(k)
                             ksys.append('%({ks})s'.format(ks = k))
-                        
-            
+
+
                 lcolumn = ' , '.join(column)
                 kvariables = ' , '.join(ksys)
-                
+
                 table_insert = "INSERT INTO  {table}  ({column}) VALUES ({kvariables}) ".format(table=str(self.table), column=lcolumn, kvariables=kvariables)
 
                 if len(value) == 1:
@@ -754,40 +755,22 @@ class Table:
             return t_result.save() if t_result.Exception == "" else t_result.Exception
         else:
             return "Accepts type dictionary"
-    
+
     def raw(self, rawstring):
         return rawstring
 
 
     def clear(self):
-        if Version.PYVERSION_MA <= 2 and Version <= 7:
-            self.table_where[:]
-            self.table_orwhere[:]
-            self.table_whereisnull[:]
-            self.table_wherenotnull[:]
-            self.table_join[:]
-            self.table_leftjoin[:]
-            self.table_rightjoin[:]
-            self.table_outerjoin[:]
-        elif Version.PYVERSION_MA == 3 and Version.PYVERSION_MI <= 3:
-            self.table_where[:]
-            self.table_orwhere[:]
-            self.table_whereisnull[:]
-            self.table_wherenotnull[:]
-            self.table_join[:]
-            self.table_leftjoin[:]
-            self.table_rightjoin[:]
-            self.table_outerjoin[:]
-        elif Version.PYVERSION_MA == 3 and Version.PYVERSION_MI >= 4:
-            self.table_where.clear()
-            self.table_orwhere.clear()
-            self.table_join.clear()
-            self.table_leftjoin.clear()
-            self.table_rightjoin.clear()
-            self.table_outerjoin.clear()
-            self.table_whereisnull.clear()
-            self.table_wherenotnull.clear()
+        self.table_where = []
+        self.table_orwhere = []
+        self.table_join = []
+        self.table_leftjoin = []
+        self.table_rightjoin = []
+        self.table_outerjoin = []
+        self.table_whereisnull = []
+        self.table_wherenotnull = []
 
+        self.table_whereand = []
         self.table_select = ""
         self.table_whereBetween = ""
         self.table_whereNotBetween = ""
@@ -816,19 +799,19 @@ class Table:
         self.table_take = ""
         self.table_having = ""
 
+        return self
+
     def first(self):
         self.get()
         return self.result[0]
 
     def get(self):
         t_result = self.DB.query(self.table_select)
-
+        self.Qstring = self.table_select
         self.error = t_result.Exception
         self.result = t_result.fetch()
         self.rowCount = t_result.count()
         self.clear()
-        
-
         return self
 
     def set(self):

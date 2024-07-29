@@ -23,6 +23,7 @@ class Table:
         self.prefix = self.DB.prefix
         self.table = str(self.prefix) + str(table)
         self.tabledict = table
+        self.Qstring  = ""
         self.result = None
         self.rowCount = None
         self.table_from = ""
@@ -30,6 +31,7 @@ class Table:
         self.table_exist = ""
         self.table_notexist = ""
         self.table_where = []
+        self.table_whereand = ""
         self.table_wherenotin = ""
         self.table_wherein = ""
         self.table_orwhere = []
@@ -737,35 +739,18 @@ class Table:
     def raw(self, rawstring):
         return rawstring
 
-    def clear(self):
-        if Version.PYVERSION_MA <= 2 and Version <= 7:
-            self.table_where[:]
-            self.table_orwhere[:]
-            self.table_whereisnull[:]
-            self.table_wherenotnull[:]
-            self.table_join[:]
-            self.table_leftjoin[:]
-            self.table_rightjoin[:]
-            self.table_outerjoin[:]
-        elif Version.PYVERSION_MA == 3 and Version.PYVERSION_MI <= 3:
-            self.table_where[:]
-            self.table_orwhere[:]
-            self.table_whereisnull[:]
-            self.table_wherenotnull[:]
-            self.table_join[:]
-            self.table_leftjoin[:]
-            self.table_rightjoin[:]
-            self.table_outerjoin[:]
-        elif Version.PYVERSION_MA == 3 and Version.PYVERSION_MI >= 4:
-            self.table_where.clear()
-            self.table_orwhere.clear()
-            self.table_join.clear()
-            self.table_leftjoin.clear()
-            self.table_rightjoin.clear()
-            self.table_outerjoin.clear()
-            self.table_whereisnull.clear()
-            self.table_wherenotnull.clear()
 
+    def clear(self):
+        self.table_where = []
+        self.table_orwhere = []
+        self.table_join = []
+        self.table_leftjoin = []
+        self.table_rightjoin = []
+        self.table_outerjoin = []
+        self.table_whereisnull = []
+        self.table_wherenotnull = []
+        
+        self.table_whereand = ""
         self.table_select = ""
         self.table_whereBetween = ""
         self.table_whereNotBetween = ""
@@ -794,13 +779,15 @@ class Table:
         self.table_take = ""
         self.table_having = ""
 
+        return self
+
     def first(self):
         self.get()
         return self.result[0]
 
     def get(self):
         t_result = self.DB.query(self.table_select)
-
+        self.Qstring = self.table_select
         self.error = t_result.Exception
         self.result = t_result.fetch()
         self.rowCount = t_result.count()
