@@ -20,12 +20,13 @@ log_msg = Log.Log()
 class SMTP(App.App):
 
     def __init__(self):
-        
+
         self.setting = self.envrin('SMTP')
         self.server = self.setting.get('server', '')
         self.port = self.setting.get('port', '')
         self.username = self.setting.get('username', '')
         self.password = self.setting.get('password', '')
+        self.from = self.setting.get('from', '')
 
         self.con = None
         self.result = None
@@ -47,8 +48,8 @@ class SMTP(App.App):
         return self.response.quit()
 
 
-    def send(self, from_send, to_recipient, message_subject= "", messege_content = "", header="html"):
-        
+    def send(self, from_send=None, to_recipient, message_subject= "", messege_content = "", header="html"):
+        _from_send = self.from  if from_send == None else from_send
         try:
             if self.connect() != None:
                 body = messege_content
@@ -61,7 +62,7 @@ class SMTP(App.App):
                     msg.attach(self.attachfile)
 
                 context = msg.as_string()
-                self.response.sendmail(from_send, to_recipient, context)
+                self.response.sendmail(_from_send, to_recipient, context)
                 self.close()
                 return True
             else:
