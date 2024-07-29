@@ -342,16 +342,16 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 # print(ssock.version())
                 data = json.dumps(ssock.getpeercert())
-        varb.put("HTTPS", "on")
+        varb.put(ssl_v="on")
         vars_http = "https://"
         # print(ssock.getpeercert())
     except Exception as err:
         try:
             cert = ssl.get_server_certificate((hostname, int(portnumber)))
-            varb.put("HTTPS", "on")
+            varb.put(ssl_v="on")
             vars_http = "https://"
         except Exception as err:
-            varb.put("HTTPS", "off")
+            varb.put(ssl_v="off")
             vars_http = "http://"
 
     try:
