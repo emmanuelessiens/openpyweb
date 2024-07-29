@@ -20,12 +20,14 @@ from openpyweb.Functions import url, iteration
 from openpyweb.Controllers import Controllers
 import os
 import sys
+import cgi
+import cgitb
 import importlib
 import glob
 import  json
 import inspect
 
-
+cgitb.enable()
 
 global host
 
@@ -79,7 +81,6 @@ class App(env, Config, Variable):
         self.languages = ""
         self.Driver = ""
         self.formData = None
-        self.server_obj = None
         self.datag = {}
 
     def getRouters(self):
@@ -89,16 +90,12 @@ class App(env, Config, Variable):
     def getPath(self):
         return self.getpath
 
-    def runs(self, formData=None, cook=None):
+    def runs(self, formData=None):
+
         self.formData = formData
-        self.server_obj = cook
         return self.initial()
 
     def initial(self):
-        if self.out("SERVER_SOFTWARE") != AUTHOR:
-            import cgitb
-            cgitb.enable()
-
         self.default("Framework", AUTHOR)
         self.default("X-Version", VERSION_TEXT)
         self.getrouters = self.envrin('route')
@@ -161,7 +158,7 @@ class App(env, Config, Variable):
 
         if controllersMethods != "":
             self.actions = controllersMethods
-
+            
         controllers = os.path.join(controllerpath, "%s.py" % controllersClass)
 
         if os.path.isfile(controllers) == True:
@@ -184,11 +181,11 @@ class App(env, Config, Variable):
 
     def iterate(self, value=[], name='pid'):
         return iteration.iteration().iteri(value, itr=name)
-
-
+        
+        
     def URL(self, path='', lang=False):
         return url.url().url(path=path, lang=lang)
-
+        
     def errorP(self, code, replace=""):
         getErrorP = self.envrin('error')
 
@@ -216,19 +213,48 @@ class App(env, Config, Variable):
         pageCode = "page{code}".format(code=code)
         if os.path.isdir(os.path.join(os.getcwd(), 'public')):
             if self.out("SERVER_SOFTWARE") == AUTHOR:
-                    if getErrorP != '':
-                        errorP = getErrorP
+                re_url = ""
+                errorP = {}
+                if getErrorP != '':
+                    errorP = getErrorP
 
-                        if errorP.get(code, '') != '':
-                            self.put(status=code)
-                            _error_l = errorP.get(code, '')
-                            if _error_l != '':
-                                re_url = self.URL(_error_l, lang=True)
+                if errorP.get(code, '') != '':
+
+                    controllerP = ""
+                    if '/' in errorP.get(code, ''):
+                        splitP = errorP.get(code, '').split('/')
+                        controllerP = os.path.join(controllerpath, "%sController.py" % str(splitP[0]).capitalize())
+                    else:
+                        controllerP = os.path.join(controllerpath, "%sController.py" % str(errorP.get(code, '')).capitalize() )
+
+                    if code == "500":
+
+                        if os.path.isfile(controllerP) == True:
+                            re_url = self.URL('/' + str(errorP.get(code, '')))
                         else:
-                            if os.path.isfile(self.error_page_html(code)) == True:
-                                re_url = self.URL("/error/{code}".format(code=pageCode), lang=True)
-                        return code, re_url
+                            re_url = self.URL("/error")
+                    else:
+                        if os.path.isfile(controllerP) == True:
+                            re_url = self.URL('/' + str(errorP.get(code, '')))
+                        else:
 
+                            if os.path.isfile(self.error_page_html(code)) == True:
+                                re_url = self.URL(
+                                    "/error/{code}".format(code=pageCode))
+
+                else:
+                    if code == "500":
+                        re_url = self.URL("/error")
+                    else:
+
+                        if os.path.isfile(self.error_page_html(code)) == True:
+                            re_url = self.URL(
+                                "/error/{code}".format(code=pageCode))
+
+                self.put(status=code)
+
+                return code, re_url
+        
         if getErrorP != '':
 
             errorP = getErrorP
@@ -242,7 +268,7 @@ class App(env, Config, Variable):
                 self.default("SERVER_SOFTWARE", "")
                 if os.path.isfile(self.error_page_html(code)) == True:
                     return self.redirect("/error/{code}".format(code=pageCode), code=code, lang=True)
-
+            
         else:
             self.default("SERVER_SOFTWARE", "")
             if os.path.isfile(error_page_class) == True:
@@ -252,7 +278,7 @@ class App(env, Config, Variable):
         env = self._e()
         self.add(env)
         return self.get(key, '')
-
+        
     def DB(self):
 
         self.dbDriver = self.envrin('dbConnect')
@@ -298,8 +324,8 @@ class App(env, Config, Variable):
     def strMethod(self, p, c=None, mv=None):
         gmodule = []
         Request = self.Request(prform=self.formData)
-        Session = self.Session(prsee=self.server_obj) #prsee=self.server_obj
-
+        Session = self.Session()
+        
         try:
             m = mv.split("?")[0]
         except Exception as err:
@@ -338,7 +364,7 @@ class App(env, Config, Variable):
             return self.errorP('404')
 
     def redirect(self, location='/', link=False, code="307", lang=False):
-
+                
         if self.out("SERVER_SOFTWARE") == AUTHOR:
 
             if link == True:
@@ -354,13 +380,13 @@ class App(env, Config, Variable):
                 location_d = self.URL(location, lang)
             else:
                 location_d = location
-
+                
             self.default("REDIRECT_STATUS", code)
             self.default("REDIRECT_REDIRECT_STATUS", code)
             print("Location: {location}".format(location=location_d))
             print()
 
-    def referer(self, location='/', link=False, code="301", lang=False):
+    def referer(self, location='/', link=False, code="307", lang=False):
         if self.out("SERVER_SOFTWARE") == AUTHOR:
             if link == True:
                 location_d = self.URL(location, lang)
@@ -368,8 +394,7 @@ class App(env, Config, Variable):
                 location_d = location
             self.put(status=code)
             self.put(referral=self.out('HTTP_REFERER', location_d))
-            return code, self.out('HTTP_REFERER', location_d) if self.out('HTTP_REFERER', location_d) != "" else location_d
-
+            return code, self.out('HTTP_REFERER', location_d)
         else:
             if link == True:
                 location_d = self.URL(location, lang)
@@ -391,11 +416,10 @@ class App(env, Config, Variable):
             importlib.reload(sys)
 
         if os.path.isdir(os.path.join(os.getcwd(), 'public')) == False:
-            if self.out("SERVER_SOFTWARE") != AUTHOR:
-                print("Content-type: {type}\r\n".format(type=type))  # \r\n\r\n
-                if p > 0:
-                    for x in range(p):
-                        print("")
+            print("Content-type: {type}\r\n".format(type=type))  # \r\n\r\n
+            if p > 0:
+                for x in range(p):
+                    print("")
         else:
             return
 
@@ -416,7 +440,6 @@ class App(env, Config, Variable):
 
     def XHreponse(self, dataString, ctype=""):
         if self.out("SERVER_SOFTWARE") == AUTHOR:
-            self.header(type=ctype)
             return dataString
         else:
 
@@ -431,7 +454,7 @@ class App(env, Config, Variable):
 
         if pathf == "":
             pathf = self.getDefaultViewPath()
-
+    
         pathfhtml = os.path.join(host, 'views', "%s.html" % pathf)
         html = ""
         if os.path.isfile(pathfhtml) == False:
@@ -450,17 +473,20 @@ class App(env, Config, Variable):
                 print(output)
 
 
-    def jsonify(self, value='', error='', indent=4, code=200):
+    def jsonify(self, value='', error='', indent=4):
+        self.header(type="application/json")
         try:
             _json = json.dumps(value)
             parsed =  json.loads(_json)
-            self.default("REDIRECT_REDIRECT_STATUS", code)
-            self.default("REDIRECT_STATUS", code)
+            self.default("REDIRECT_REDIRECT_STATUS", 200)
+            self.default("REDIRECT_STATUS", 200)
             if error != '':
                 parsed = {
                     'error': error,
                     'code': '403'
                 }
+                self.default("REDIRECT_REDIRECT_STATUS", 403)
+                self.default("REDIRECT_STATUS", 403)
         except Exception as e:
             parsed = {
                     'error': error,
@@ -468,13 +494,9 @@ class App(env, Config, Variable):
             }
             self.default("REDIRECT_REDIRECT_STATUS", 403)
             self.default("REDIRECT_STATUS", 403)
-
-        if self.out("SERVER_SOFTWARE") == AUTHOR:
-            return ('SetWriter', code, json.dumps(parsed, indent=indent), 'application/json')
-        else:
-            self.header(type="application/json")
-            print(json.dumps(parsed, indent=indent))
-
+            
+        print(json.dumps(parsed, indent=indent))
+            
     def read_html(self, template_dir, engine, context={}):
         data_c.update(context)
         html_file_path = os.path.join(template_dir, "%s.html" % engine)
@@ -524,7 +546,7 @@ class App(env, Config, Variable):
 
                 i = i + 1
                 # Ignore __ files
-
+                
                 if name.startswith("__init__"):
                     continue
                 if name != "__init__":
@@ -603,3 +625,4 @@ class App(env, Config, Variable):
                                         self.actions) + " Requires " + self.method)
 
                                     return self.errorP('400')
+

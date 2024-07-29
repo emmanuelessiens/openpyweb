@@ -5,6 +5,7 @@
 # Maintainer Email: emmanuelessiens@outlook.com
 # Created by Emmanuel Essien on 2019.
 ###
+import cgitb
 import base64
 import traceback
 import cgi
@@ -49,40 +50,36 @@ except Exception as err:
     import httplib as htp
     import urllib2 as urllib
 
-try:
-    import imp as im
-except Exception as err:
-    import importlib as im
-
 varb = Variable()
 
-port = 80
-
-
-global response_code
-redirect_code = ["500", "400", "404", "405", "451", "301", "302", "307"]
-def load_source(modname, filename):
-    import types
-    with open(filename, "rb") as f:
-        mod = types.ModuleType(modname)
-        exec(f.read(), mod.__dict__)
-    return mod
 
 def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port="", pr=False):
     server = HTTPServer
 
-    path = str(path).replace("\\", "/") if path != "" else str(os.getcwd()).replace("\\", "/")
+    path = str(path).replace(
+        "\\", "/") if path != "" else str(os.getcwd()).replace("\\", "/")
 
     spes = "/"
+    vpath = ""
+
+    try:
+        import imp as im
+    except Exception as err:
+        import importlib as im
+
+    mimetype = ""
     sys.path.insert(0, os.path.dirname(__file__))
     os.chdir(path)
+
+    cookie_v = cook
 
     class httpv(BaseHTTPRequestHandler):
 
         def do_GET(self):
-            path_info = self.path
-            _cookies = self
 
+            path_info = self.path
+            
+            
             form = cgi.FieldStorage(
                 fp=self.rfile,
                 headers=self.headers,
@@ -92,40 +89,42 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                 }
             )
             if self.path == spes:
-                if os.path.isfile(os.path.join(str(path),"public", "index.py")) == True:
-                    vpath = os.path.join("public", "index.py")
+                if os.path.isfile(str(path) + spes + "public" + spes + "index.py") == True:
+                    vpath = "public" + spes + "index.py"
 
-                elif os.path.isfile(os.path.join(str(path),"public", "home.py")) == True:
-                    vpath = os.path.join("public", "home.py")
-                elif os.path.isfile(os.path.join(str(path),"public", "default.py")) == True:
-                    vpath = os.path.join("public", "default.py")
-                try:
-                    App = im.load_source('App.App', os.path.join(path,vpath))
-                except Exception as e:
-                    App = load_source('App.App', os.path.join(path,vpath))
-                self._App = App.App()
+                elif os.path.isfile(str(path) + spes + "public" + spes + "home.py") == True:
+                    vpath = "public" + spes + "home.py"
+                elif os.path.isfile(str(path) + spes + "public" + spes + "default.py") == True:
+                    vpath = "public" + spes + "default.py"
 
-
+                App = im.load_source('App.App', path + spes + vpath)
                 mimetype = 'text/html'
-                if "." not in path_info:
-                    self._App.put(method="GET", accept_lang=self.headers["Accept-Language"],
+                if "." not in path_info :
+                    
+                    
+                    App.App.put(method="GET", accept_lang=self.headers["Accept-Language"],
                             http_connect=self.headers["Connection"], http_user_agt=self.headers["User-Agent"],
                             http_encode=self.headers["Accept-Encoding"], path=path, host=host, port=port,
                             para=path_info, remoter_addr=self.client_address[
                                 0], remoter_port=self.client_address[1],
-                            script_file=os.path.join(path, vpath), server_proto=server_pro, server_ver=self.server_version,
+                            script_file=str(
+                                path) + str(spes) + (vpath), server_proto=server_pro, server_ver=self.server_version,
                             protocol_ver=self.protocol_version)
-                    runs_response = self._App.runs(formData=form, cook=_cookies)
+                    runs_response = App.App.runs(formData=form)
                     if isinstance(runs_response, tuple) == True:
-                        if str(runs_response[0]).isnumeric():
-                            if runs_response[0] in redirect_code:
-                                self.redirect(runs_response[0], runs_response[1])
-                            else:
-                                self.rendering(mimetype=mimetype, content=runs_response)
-                        if len(runs_response) == 4:
-                            self.setwriter(runs_response[1], runs_response[2], runs_response[3])
 
+                        if str(runs_response[0]) == "404" or str(runs_response[0]) == "405" or str(
+                                runs_response[0]) == "400":
 
+                            self.error(runs_response[0], runs_response[1])
+
+                        elif str(runs_response[0]) == "307":
+
+                            self.redirect(runs_response[0], runs_response[1])
+                        else:
+
+                            self.rendering(mimetype=mimetype,
+                                        content=runs_response)
 
                     else:
                         self.rendering(mimetype=mimetype, content=runs_response)
@@ -135,50 +134,49 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                 if "." not in str(self.path):
 
                     if str(self.path) != "":
-                        if os.path.isfile(os.path.join(str(path), "public", "index.py")) == True:
-                            vpath = os.path.join("public","index.py")
+                        if os.path.isfile(str(path) + spes + "public" + spes + "index.py") == True:
+                            vpath = "public" + spes + "index.py"
 
-                        elif os.path.isfile(os.path.join(str(path), "public","home.py")) == True:
-                            vpath = os.path.join("public","home.py")
+                        elif os.path.isfile(str(path) + spes + "public" + spes + "home.py") == True:
+                            vpath = "public" + spes + "home.py"
 
-                        elif os.path.isfile(os.path.join(str(path),"public","default.py")) == True:
+                        elif os.path.isfile(str(path) + spes + "public" + spes + "default.py") == True:
 
-                            vpath = os.path.join("public","default.py")
+                            vpath = "public" + spes + "default.py"
 
-                        try:
-                            App = im.load_source('App.App', os.path.join(path,vpath))
-                        except:
-                            App = load_source('App.App', os.path.join(path,vpath))
-                        self._App = App.App()
+                        App = im.load_source('App.App', path + spes + vpath)
                         mimetype = 'text/html'
                         if "." not in path_info:
-
-
-                            self._App.put(method="GET", accept_lang=self.headers["Accept-Language"],
+                            
+                            
+                            App.App.put(method="GET", accept_lang=self.headers["Accept-Language"],
                                         http_connect=self.headers["Connection"], http_user_agt=self.headers["User-Agent"],
                                         http_encode=self.headers["Accept-Encoding"], path=path, host=host, port=port,
                                         para=path_info, remoter_addr=self.client_address[0],
-                                        remoter_port=self.client_address[1], script_file=os.path.join(
-                                path, vpath), server_proto=server_pro, server_ver=self.server_version,
+                                        remoter_port=self.client_address[1], script_file=str(
+                                path) + str(spes) + (vpath), server_proto=server_pro, server_ver=self.server_version,
                                 protocol_ver=self.protocol_version)
 
-                            runs_response = self._App.runs(formData=form, cook=_cookies)
-
+                            runs_response = App.App.runs(formData=form)
                             if isinstance(runs_response, tuple) == True:
-                                if str(runs_response[0]).isnumeric():
-                                    if runs_response[0] in redirect_code:
-                                        self.redirect(runs_response[0], runs_response[1])
-                                    else:
-                                        self.rendering(mimetype=mimetype, content=runs_response)
-                                if len(runs_response) == 4:
-                                    self.setwriter(runs_response[1], runs_response[2], runs_response[3])
 
+                                if str(runs_response[0]) == "404" or str(runs_response[0]) == "405" or str(
+                                        runs_response[0]) == "400":
+
+                                    self.error(runs_response[0], runs_response[1])
+
+                                elif str(runs_response[0]) == "307":
+
+                                    self.redirect(
+                                        runs_response[0], runs_response[1])
+                                else:
+
+                                    self.rendering(mimetype=mimetype,
+                                                content=runs_response)
 
                             else:
-                                self.rendering(mimetype=mimetype, content=runs_response)
-
-
-
+                                self.rendering(mimetype=mimetype,
+                                            content=runs_response)
 
             if self.path.endswith('favicon.ico'):
                 return
@@ -196,29 +194,28 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
 
             except Exception as err:
                 if self.path.endswith(self.path):
-                    if os.path.isfile(os.path.join(str(path),"public","index.py"))== True:
-                        vpath = os.path.join("public","index.py")
+                    if os.path.isfile(str(path) + spes + "public" + spes + "index.py") == True:
+                        vpath = "public" + spes + "index.py"
 
-                    elif os.path.isfile(os.path.join(str(path),"public", "home.py")) == True:
-                        vpath = os.path.join("public","home.py")
+                    elif os.path.isfile(str(path) + spes + "public" + spes + "home.py") == True:
+                        vpath = "public" + spes + "home.py"
 
-                    elif os.path.isfile(os.path.join(str(path),"public", "default.py")) == True:
-                        vpath = os.path.join("public","default.py")
+                    elif os.path.isfile(str(path) + spes + "public" + spes + "default.py") == True:
+                        vpath = "public" + spes + "default.py"
 
-                    try:
-                        App = im.load_source('App.App', os.path.join(path,vpath))
-                    except Exception as e:
-                        App = load_source('App.App', os.path.join(path,vpath))
-                    self._App = App.App()
+                    App = im.load_source('App.App', path + spes + vpath)
                     code = "500"
-                    self._App.put(status=code)
-                    _code, _url = self._App.errorP(code=code)
-                    self.redirect(_code, _url)
+                    App.App.put(status=code)
+                    pth = str(os.path.dirname(
+                        os.path.abspath(__file__))).replace("\\", "/")
+                    f = open(pth + "/cmd/errd/index.html", "r")
+                    content = str(f.read()).format(code=code, name=AUTHOR, message=HTTP_CODE.get(
+                        code, ""), version=VERSION_TEXT)
+                    self.wfile.write(bytes(str(content).encode()))
 
         def do_POST(self):
-
             path_info = self.path
-            _cookies = self
+           
             form = cgi.FieldStorage(
                 fp=self.rfile,
                 headers=self.headers,
@@ -229,45 +226,29 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
             )
 
             # text/plain; charset=utf-8
-            if os.path.isfile(os.path.join(str(path),"public", "index.py")) == True:
-                vpath = os.path.join("public","index.py")
+            if os.path.isfile(str(path) + spes + "public" + spes + "index.py") == True:
+                vpath = "public" + spes + "index.py"
 
-            elif os.path.isfile(os.path.join(str(path),"public", "home.py")) == True:
-                vpath = os.path.join("public", "home.py")
+            elif os.path.isfile(str(path) + spes + "public" + spes + "home.py") == True:
+                vpath = "public" + spes + "home.py"
 
             else:
-                vpath = os.path.join("public", "default.py")
+                vpath = "public" + spes + "default.py"
 
-            try:
-                App = im.load_source('App.App', os.path.join(path,vpath))
-            except:
-                App = load_source('App.App', os.path.join(path,vpath))
-            self._App = App.App()
-
+            App = im.load_source('App.App', path + spes + vpath)
             mimetype = 'text/html'
             if "." not in path_info :
-
-
-                self._App.put(method="POST", accept_lang=self.headers["Accept-Language"],
+                
+                
+                App.App.put(method="POST", accept_lang=self.headers["Accept-Language"],
                             http_connect=self.headers["Connection"], http_user_agt=self.headers["User-Agent"],
                             http_encode=self.headers["Accept-Encoding"], path=path, host=host, port=port, para=path_info,
-                            remoter_addr=self.client_address[0], remoter_port=self.client_address[1], script_file=os.path.join(path, vpath), server_proto=server_pro, server_ver=self.server_version,
+                            remoter_addr=self.client_address[0], remoter_port=self.client_address[1], script_file=str(
+                    path) + str(spes) + (vpath), server_proto=server_pro, server_ver=self.server_version,
                     protocol_ver=self.protocol_version)
 
-                runs_response = self._App.runs(formData=form, cook=_cookies)
-                if isinstance(runs_response, tuple) == True:
-                    if str(runs_response[0]).isnumeric():
-
-                        if runs_response[0] in redirect_code:
-                            self.redirect(runs_response[0], runs_response[1])
-                        else:
-                            self.rendering(mimetype=mimetype, code=200, content=self._App.runs(formData=form, cook=_cookies))
-                    else:
-                        if len(runs_response) == 4:
-                            self.setwriter(runs_response[1], runs_response[2], runs_response[3])
-
-                else:
-                    self.rendering(mimetype=mimetype, code=200, content=self._App.runs(formData=form, cook=_cookies))
+                self.rendering(mimetype=mimetype, code=200,
+                            content=App.App.runs(formData=form))
 
         def do_HEAD(self):
             self.do_GET()
@@ -275,63 +256,44 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
         def do_PUT(self):
             self.do_POST()
 
-        def setwriter(self, code, content, mimetype="text/html"):
-            try:
-                self.send_response(int(code))
-                self.send_header('Content-type', mimetype)
-                self.end_headers()
-                self.wfile.write(bytes(str(content).encode()))
-            except Exception as e:
-                print(f'SetWriter Error: {e}')
-                pass
-
-        def setcookie(self, code, name, cooKeys):
-            self.send_response(int(code))
-            self.send_header("Content-type", "text/html")
-            for morsel in cooKeys.values():
-                self.send_header(name, morsel.OutputString())
-            #self.end_headers()
-
         def rendering(self, path="", mimetype="", mode='r', encoding="utf-8", content="", code=200):
-            try:
-                self.send_response(int(code))
-                self.send_header('Content-type', mimetype)
-                self.end_headers()
-                if path != "":
 
-                    f = open(path + self.path, mode)
-                    readv = ""
-                    if mode == "rb":
-                        readv = f.read()
-                    else:
-                        readv = bytes(str(f.read()).encode('utf-8'))
+            self.send_response(int(code))
+            self.send_header('Content-type', mimetype)
+            self.end_headers()
+            if path != "":
 
-                    self.wfile.write(readv)
+                f = open(path + self.path, mode)
+                readv = ""
+                if mode == "rb":
+                    readv = f.read()
+                else:
+                    readv = bytes(str(f.read()).encode('utf-8'))
 
-                    f.close()
+                self.wfile.write(readv)
 
-                elif content != "":
-                    self.wfile.write(bytes(str(content).encode()))
-            except Exception as e:
-                print(f'Rendering Error: {e}')
-                pass
+                f.close()
 
+            elif content != "":
+                self.wfile.write(bytes(str(content).encode()))
+
+        def error(self, code, e_url, code_re=307):
+            self.send_response(int(code_re))
+            self.send_header('Location', "{e_url}".format(e_url=e_url))
+            self.send_error(
+                code=int(code), message=HTTP_CODE.get(code, ""))
+            self.end_headers()
 
         def redirect(self, code, re_url, code_re=307):
-            try:
-                self.send_response(int(code_re))
-                self.send_header("Content-type", "")
-                self.send_header('Location', "{re_url}".format(re_url=re_url))
-                self.send_error(code=int(code), message=HTTP_CODE.get(code, ""))
-                self.end_headers()
-            except Exception as e:
-                pass
-
-
-
+            self.send_response(int(code_re))
+            self.send_header('Location', "{re_url}".format(re_url=re_url))
+            self.send_error(
+                code=int(code), message=HTTP_CODE.get(code, ""))
+            self.end_headers()
 
     class ThreadedHTTPServer(ThreadingMixIn, server):
         """Moomins live here"""
+
     hostname = ssl_ip if ssl_ip != "" else host
     portnumber = int(ssl_port) if ssl_port != "" else int(port)
     vars_http = ""
@@ -369,6 +331,3 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
         server.server_close()
     except Exception as err:
         print(bold(red("Something went wrong: Default port already in use")))
-
-def terminated():
-    return exit('Server Terminated')
