@@ -11,12 +11,12 @@
 # Each method represent query builder attribute
 ###
 
-from openpyweb import App, Version, Log
+from openpyweb  import App, Version, Log
 
 app = App.App()
 
-
 class Table:
+
     def __init__(self, table=""):
         self.DB = app.DB()
         self.prefix = self.DB.prefix
@@ -80,6 +80,7 @@ class Table:
         self.table_notexist = "{rawquery}".format(rawquery=rawString)
         return self
 
+
     def select(self, *value):
 
         if self.table_value != "":
@@ -106,9 +107,10 @@ class Table:
         else:
             _or = ""
 
+
         value = value if value != "" else ""
 
-        self.table_select = "SELECT {value}{distinct}{values}{max}{min}{count}{avg} FROM {table}{exists}{notexist}{outerjoin}{join}{leftjoin}{rightjoin}{where}{whereisnull}{wherenotnull}{whereBetween}{whereNotBetween}{wherenotin}{orwhere}{groupBy}{having}{orderBy}{limit}{offset}{take}".format(
+        self.table_select = "SELECT {value}{distinct}{values}{max}{min}{count}{avg} FROM {table}{exists}{notexist}{join}{where}{whereand}{whereisnull}{wherenotnull}{whereBetween}{whereNotBetween}{wherenotin}{orwhere}{groupBy}{having}{orderBy}{limit}{take}".format(
             distinct=self.table_distinct,
             value=','.join(value) if self.table_count == "" else '',
             values=values if self.table_count == "" else '',
@@ -119,25 +121,20 @@ class Table:
             table=self.table,
             exists=self.table_exist,
             whereBetween=str(" WHERE") + self.table_whereBetween if len(self.table_whereBetween) > 0 else '',
+            whereand=" ".join(self.table_whereand) if len(self.table_whereand) > 0 else '',
             whereNotBetween=str(" WHERE") + self.table_whereNotBetween if len(self.table_whereNotBetween) > 0 else '',
             notexist=self.table_notexist,
-            outerjoin=" ".join(self.table_outerjoin),
             join=" ".join(self.table_join),
-            leftjoin=" ".join(self.table_leftjoin),
-            rightjoin=" ".join(self.table_rightjoin),
             whereisnull=str(" WHERE") + str(''.join(self.table_whereisnull)) if len(self.table_whereisnull) > 0 else '',
-            wherenotnull=str(" WHERE") + str(''.join(self.table_wherenotnull)) if len(
-                self.table_wherenotnull) > 0 else '',
+            wherenotnull=str(" WHERE") + str(''.join(self.table_wherenotnull)) if len(self.table_wherenotnull) > 0 else '',
             where=str(" WHERE") + str(_and.join(self.table_where)) if len(self.table_where) > 0 else '',
-            wherenotin=str(_where) + str(_and) + str(self.table_wherenotin) if len(
-                self.table_wherenotin) > 0  else '',
+            wherenotin=str(_where) + str(_and) + str(self.table_wherenotin) if len(self.table_wherenotin) > 0 else '',
             orwhere=str(_or) + str(_or.join(self.table_orwhere)),
             groupBy=self.table_groupby,
             orderBy=self.table_orderby,
             limit=self.table_limit,
-            offset=self.table_offset,
-            take=self.table_take,
-            having=self.table_having
+            take= self.table_take,
+            having= self.table_having
         )
         return self
 
@@ -180,18 +177,18 @@ class Table:
 
     def whereAnd(self, variable="", sign="", string=""):
         string_type = "'{string}'".format(string=string) if (type(string) == str) == True else string
-        self.table_distinct = "AND {variable} {sign} {string}".format(variable=variable, sign=sign, string=string_type)
+        self.table_whereand.append(" AND {variable} {sign} {string}".format(variable=str(self.prefix)+str(variable), sign=sign, string=string_type))
         return self
 
     def whereIn(self, variable, list=[]):
 
-        self.table_wherenotin = "{variable} NOT IN {list}".format(variable=variable, list='({})'.format(",".join(list)))
+        self.table_wherenotin = "{variable} NOT IN {list}".format(variable=str(self.prefix)+str(variable), list='({})'.format(",".join(list)))
 
         return self
 
     def whereNotIn(self, variable, list=[]):
 
-        self.table_wherenotin = "{variable} NOT IN {list}".format(variable=variable, list='({})'.format(",".join(list)))
+        self.table_wherenotin = "{variable} NOT IN {list}".format(variable=str(self.prefix)+str(variable), list='({})'.format(",".join(list)))
 
         return self
 
@@ -204,7 +201,7 @@ class Table:
             variables = variable[0]
             sign = '='
             string = variable[1]
-        table_orOn = " OR {variable} {sign} {string}".format(variable=variables, sign=sign, string=string)
+        table_orOn = " OR {variable} {sign} {string}".format(variable=str(self.prefix)+str(variables), sign=sign, string=string)
 
         self.table_orOn.append(table_orOn)
         return self
@@ -222,7 +219,7 @@ class Table:
             sign = '='
             string = variable[1]
 
-        self.table_On = " ON {variable} {sign} {string}".format(variable=variables, sign=sign, string=string)
+        self.table_On = " ON {variable} {sign} {string}".format(variable=str(self.prefix)+str(variables), sign=sign, string=string)
 
         return self
 
@@ -238,7 +235,7 @@ class Table:
 
         string_type = "'{string}'".format(string=string) if (type(string) == str) == True else string
 
-        table_orwhere = "{variable} {sign} {string}".format(variable=variables, sign=sign, string=string_type)
+        table_orwhere = "{variable} {sign} {string}".format(variable=str(self.prefix)+str(variables), sign=sign, string=string_type)
         self.table_orwhere.append(table_orwhere)
 
         return self
@@ -264,7 +261,7 @@ class Table:
         elif (type(variables) == str) == True:
 
             self.table_select = "SELECT FROM {table} WHERE {variable} {sign} {string} ".format(table=self.table,
-                                                                                               variable=variables,
+                                                                                               variable=str(self.prefix)+str(variables),
                                                                                                sign=sign, string=string)
 
         return self
@@ -308,7 +305,7 @@ class Table:
 
         string_type = "'{string}'".format(string=string) if (type(string) == str) == True else string
 
-        table_where = " {variable} {sign} {string}".format(variable=variables, sign=sign, string=string_type)
+        table_where = " {variable} {sign} {string}".format(variable=str(self.prefix)+str(variables), sign=sign, string=string_type)
 
         self.table_where.append(table_where)
         return self
@@ -318,6 +315,8 @@ class Table:
         self.table_whereisnull = " {string} IS NULL".format(string=string)
         return self
 
+
+
     def whereNotNull(self, string):
         self.table_wherenotnull = "  {string} IS NOT NULL".format(string=string)
         return self
@@ -325,7 +324,13 @@ class Table:
     def delete(self):
         self.table_delete = "DELETE FROM {table} {where}".format(table=self.table, where=str(" WHERE") + str(" AND".join(self.table_where)))
         t_result = self.DB.query(self.table_delete)
-        return t_result.save() if t_result.Exception == "" else t_result.Exception
+
+        if t_result.Exception == "":
+            _result = t_result.save()
+            self.close()
+            return  _result
+        else:
+            t_result.Exception
 
     def groupBy(self, *values):
         self.table_groupby = " GROUP BY {values}".format(values=' , '.join(values))
@@ -344,6 +349,7 @@ class Table:
 
         return orHavingRaw
 
+
     def orderBy(self, value, sort=""):
 
         self.table_orderby = " ORDER BY {value} {sort}".format(value=value, sort=sort)
@@ -351,14 +357,12 @@ class Table:
         return self
 
     def offset(self, offset=""):
-
-        self.table_offset = " OFFSET {offset} ".format(offset=offset)
-
+        self.table_offset = str(offset) + ',' if offset != "" else 0
         return self
 
     def limit(self, limits):
 
-        self.table_limit = " LIMIT {limit} ".format(limit=limits)
+        self.table_limit = " LIMIT {offset} {limit}".format(offset=self.table_offset, limit=limits)
         return self
 
     def skip(self, offset=""):
@@ -367,8 +371,10 @@ class Table:
         return self
 
     def take(self, limits):
-        self.table_take = " LIMIT {limit} {offset}".format(offset=self.table_offset, limit=limits)
+
+        self.table_take = " LIMIT {offset} {limit}".format(offset=self.table_offset, limit=limits)
         return self
+
 
     def value(self, *values):
         self.table_value = "{values}".format(values=' , '.join(values))
@@ -393,7 +399,8 @@ class Table:
             sign = ""
             string = ""
 
-        table_join = " JOIN {table} ON {variable} {sign} {string}".format(table=str(self.prefix) + str(table),variable=variables, sign=sign, string=string)
+        table_join = " JOIN {table} ON {variable} {sign} {string}".format(table=str(self.prefix) + str(table),
+                                                                          variable=str(self.prefix)+str(variables), sign=sign, string=str(self.prefix)+str(string))
         self.table_join.append(table_join)
 
         return self
@@ -418,16 +425,75 @@ class Table:
             string = ""
 
 
-        table_outerjoin = " LEFT OUTER JOIN  {table} ON {variable} {sign} {string}".format(table=table,
-                                                                                           variable=variables,
-                                                                                           sign=sign, string=string)
-        self.table_outerjoin.append(table_outerjoin)
+        table_outerjoin = " LEFT OUTER JOIN  {table} ON {variable} {sign} {string}".format(table=table,variable=str(self.prefix)+str(variables),sign=sign, string=str(self.prefix)+str(string))
+        self.table_join.append(table_outerjoin)
         return self
-
 
     def fromTable(self, *table):
 
         self.table_from = "FROM {}".format("AS".join(table))
+        return self
+
+    def andJoin(self, *variable):
+
+        if len(variable) >= 3:
+            variables = variable[0]
+            sign = variable[1]
+            string = variable[2]
+        else:
+
+            variables = variable[0]
+            sign = "="
+            string = variable[1]
+
+        table_andjoin = "AND {variable} {sign} {string}".format(variable=str(self.prefix)+str(variables), sign=sign, string=str(self.prefix)+str(string))
+        self.table_join.append(table_andjoin)
+
+        return self
+
+
+    def orJoin(self, *variable):
+
+        if len(variable) >= 3:
+            variables = variable[0]
+            sign = variable[1]
+            string = variable[2]
+        else:
+
+            variables = variable[0]
+            sign = "="
+            string = variable[1]
+
+        table_andjoin = "OR {variable} {sign} {string}".format(variable=str(self.prefix)+str(variables), sign=sign, string=str(self.prefix)+str(string))
+        self.table_join.append(table_andjoin)
+
+        return self
+
+    def innerJoin(self, *variable):
+
+        if len(variable) > 3:
+            table = variable[0]
+            variables = variable[1]
+            sign = variable[2]
+            string = variable[3]
+        elif len(variable) == 3:
+            table = variable[0]
+            variables = variable[1]
+            sign = '='
+            string = variable[2]
+        else:
+
+            table = variable[0]
+            variables = variable[1]
+            sign = ""
+            string = ""
+
+        table_innerjoin = " INNER JOIN {table} ON {variable} {sign} {string}".format(table=str(self.prefix) + str(table),
+                                                                                   variable=str(self.prefix)+str(variables), sign=sign,
+                                                                                   string=str(self.prefix)+str(string))
+
+        self.table_join.append(table_innerjoin)
+
         return self
 
     def leftJoin(self, *variable):
@@ -449,9 +515,11 @@ class Table:
             sign = ""
             string = ""
 
-        table_leftjoin = " LEFT JOIN {table} ON {variable} {sign} {string}".format(table=str(self.prefix) + str(table), variable=variables, sign=sign, string=string)
+        table_leftjoin = " LEFT JOIN {table} ON {variable} {sign} {string}".format(table=str(self.prefix) + str(table),
+                                                                                   variable=str(self.prefix)+str(variables), sign=sign,
+                                                                                   string=str(self.prefix)+str(string))
 
-        self.table_leftjoin.append(table_leftjoin)
+        self.table_join.append(table_leftjoin)
 
         return self
 
@@ -474,15 +542,14 @@ class Table:
             string = ""
 
         table_rightjoin = " RIGHT JOIN {table} ON {variable} {sign} {string}".format(
-            table=str(self.prefix) + str(table), variable=variables, sign=sign, string=string)
-        self.table_rightjoin.append(table_rightjoin)
+            table=str(self.prefix) + str(table), variable=str(self.prefix)+str(variables), sign=sign, string=str(self.prefix)+str(string))
+
+        self.table_join.append(table_rightjoin)
         return self
 
     def pluck(self, column, key=""):
 
-        self.table_select = "SELECT {column} FROM {table} ".format(table=str(self.table),
-                                                                   column="*" if len(column) < 1 else ' {}.{}'.format(
-                                                                       str(self.table), column))
+        self.table_select = "SELECT {column} FROM {table} ".format(table=str(self.table), column="*" if len(column) < 1 else ' {}.{}'.format(str(self.table), column))
         self.get()
         kl = []
         if key == "":
@@ -531,7 +598,9 @@ class Table:
         else:
             _or = ""
 
-        self.table_select = "SELECT {distinct}{values}{max}{min}{count}{avg} FROM {table}{exists}{notexist}{outerjoin}{join}{leftjoin}{rightjoin}{where}{whereisnull}{wherenotnull}{whereBetween}{whereNotBetween}{wherenotin}{orwhere}{groupBy}{having}{orderBy}{limit}{offset}{take}".format(
+
+
+        self.table_select = "SELECT {distinct}{values}{max}{min}{count}{avg} FROM {table}{exists}{notexist}{join}{where}{whereisnull}{wherenotnull}{whereBetween}{whereNotBetween}{wherenotin}{orwhere}{groupBy}{having}{orderBy}{limit}{take}".format(
             distinct=self.table_distinct,
 
             values=values if self.table_count == "" else '',
@@ -544,23 +613,17 @@ class Table:
             whereBetween=str(" WHERE") + self.table_whereBetween if len(self.table_whereBetween) > 0 else '',
             whereNotBetween=str(" WHERE") + self.table_whereNotBetween if len(self.table_whereNotBetween) > 0 else '',
             notexist=self.table_notexist,
-            outerjoin=" ".join(self.table_outerjoin),
             join=" ".join(self.table_join),
-            leftjoin=" ".join(self.table_leftjoin),
-            rightjoin=" ".join(self.table_rightjoin),
             whereisnull=str(" WHERE") + str(''.join(self.table_whereisnull)) if len(self.table_whereisnull) > 0 else '',
-            wherenotnull=str(" WHERE") + str(''.join(self.table_wherenotnull)) if len(
-                self.table_wherenotnull) > 0 else '',
+            wherenotnull=str(" WHERE") + str(''.join(self.table_wherenotnull)) if len(self.table_wherenotnull) > 0 else '',
             where=str(" WHERE") + str(_and.join(self.table_where)) if len(self.table_where) > 0 else '',
-            wherenotin=str(_where) + str(_and) + str(self.table_wherenotin) if len(
-                self.table_wherenotin) > 0 else '',
+            wherenotin=str(_where) + str(_and) + str(self.table_wherenotin) if len(self.table_wherenotin) > 0 else '',
             orwhere=str(_or) + str(_or.join(self.table_orwhere)),
             groupBy=self.table_groupby,
             orderBy=self.table_orderby,
             limit=self.table_limit,
-            offset=self.table_offset,
-            take=self.table_take,
-            having=self.table_having)
+            take= self.table_take,
+            having= self.table_having)
 
         self.get()
         num = int(number)
@@ -586,13 +649,17 @@ class Table:
 
                     if num > 0:
                         lf = '{}'.format(ks)
-                        if '{' + lf + '}' in funcquery:
-                            table_update = str(funcquery).replace('{' + lf + '}', str(vs))
+                        if '{'+lf+'}' in funcquery:
+
+                            table_update = str(funcquery).replace('{'+lf+'}', str(vs))
 
                             t_result = self.DB.query(table_update)
 
                             result = t_result.save() if t_result.Exception == "" else t_result.Exception
             return result
+
+
+
 
     def find(self, num=0):
         self.table_find = "SELECT * FROM {table} ".format(table=str(self.table))
@@ -611,7 +678,7 @@ class Table:
                     for k, v in lt:
                         lk = l[k]
                         if lk == num:
-                            r = l
+                            r=l
             else:
                 r = ""
         else:
@@ -620,7 +687,32 @@ class Table:
         return r
 
     def update(self, data=[]):
-        if (type(data) == list) is True:
+        if (type(data) == list):
+            if len(data) > 0:
+                value = []
+                column = []
+                for l in data:
+                    value.append(l)
+                    if Version.PYVERSION_MA <= 2:
+                        lt = l.iteritems()
+                    else:
+                        lt = l.items()
+                    for k, v in lt:
+                        if k not in column:
+                            column.append( '{k}="{v}"'.format(k=k, v=v))
+
+                lcolumn = ' , '.join(column)
+
+                table_update ="UPDATE {table} SET {column} {where}".format(table=str(self.table),  column=lcolumn, where=str(" WHERE") + str("AND".join(self.table_where)) if len(self.table_where) > 0 else '')
+                t_result = self.DB.query(table_update)
+                return t_result.save() if t_result.Exception == "" else t_result.Exception
+            else:
+                return "Empty Data"
+        else:
+            return "Only Accepts type list"
+
+    def updates(self, data=[]):
+        if (type(data) == list):
             if len(data) > 0:
                 value = []
                 column = []
@@ -637,17 +729,58 @@ class Table:
                 lcolumn = ' , '.join(column)
 
                 table_update ="UPDATE {table} SET {column} {where}".format(table=str(self.table),  column=lcolumn, where=str(" WHERE") + str(" AND".join(self.table_where)) if len(self.table_where) > 0 else '')
-
-                t_result = self.DB.query(table_update)
-
-                return t_result.save() if t_result.Exception == "" else t_result.Exception
+                return table_update
             else:
                 return "Empty Data"
         else:
             return "Only Accepts type list"
 
+
     def insert(self, data=[]):
         if (type(data) == list):
+
+            if len(data) > 0:
+                ksys = []
+                value = []
+                column = []
+                for l in data:
+                    value.append(l)
+                    if Version.PYVERSION_MA <= 2:
+                        lt = l.iteritems()
+                    else:
+                        lt = l.items()
+                    for k, v in lt:
+                        if k not in column:
+                            column.append(k)
+                            ksys.append('%({ks})s'.format(ks = k))
+
+
+                lcolumn = ' , '.join(column)
+                kvariables = ' , '.join(ksys)
+
+                table_insert = "INSERT INTO  {table}  ({column}) VALUES ({kvariables}) ".format(table=str(self.table), column=lcolumn, kvariables=kvariables)
+
+                if len(value) == 1:
+                    t_result = self.DB.query(table_insert, value[0])
+                else:
+                    t_result = self.DB.querymultiple(table_insert, value)
+
+                if t_result.Exception == "":
+                    _result = t_result.save()
+                    self.close()
+                    return _result
+                else:
+                    t_result.Exception
+
+            else:
+                return "Empty Data"
+        else:
+            return "Only Accepts type list"
+
+    def insertGetId(self, data=[]):
+
+        if (type(data) == list):
+
             if len(data) > 0:
                 ksys = []
                 value = []
@@ -667,43 +800,7 @@ class Table:
                 kvariables = ' , '.join(ksys)
 
                 table_insert = "INSERT INTO  {table}  ({column}) VALUES ({kvariables}) ".format(
-                    table=str(self.table), column=lcolumn, kvariables=kvariables)
-                if len(value) == 1:
-                    t_result = self.DB.query(table_insert, value[0])
-                else:
-                    t_result = self.DB.querymultiple(table_insert, value)
-                return t_result.save() if t_result.Exception == "" else t_result.Exception
-            else:
-                return "Empty Data"
-        else:
-            return "Only Accepts type list"
-
-    def insertGetId(self, data=[], id=0):
-        if (type(data) == list):
-            if len(data) > 0:
-                ksys = []
-                value = []
-                column = []
-                for l in data:
-                    value.append(l)
-                    if Version.PYVERSION_MA <= 2:
-                        lt = l.iteritems()
-                    else:
-                        lt = l.items()
-                    for k, v in lt:
-                        if k not in column:
-                            column.append(k)
-                            ksys.append('%({ks})s'.format(ks=k))
-
-                lcolumn = ' , '.join(column)
-                kvariables = ' , '.join(ksys)
-                if id != 0:
-                    returnid = "RETURNING {id}".format(id=id)
-                else:
-                    returnid = ""
-
-                table_insert = "INSERT INTO  {table} ({column}) VALUES ({kvariables}) {returnid}".format(
-                    table=str(self.table), column=lcolumn, kvariables=kvariables, returnid=returnid)
+                        table=str(self.table), column=lcolumn, kvariables=kvariables)
 
                 if len(value) == 1:
                     t_result = self.DB.query(table_insert, value[0])
@@ -711,8 +808,10 @@ class Table:
                     t_result = self.DB.querymultiple(table_insert, value)
 
                 try:
-                    #t_result.save()
-                    return t_result.lastId()
+                    t_result.save()
+                    _result = t_result.lastId()
+                    self.close()
+                    return _result
                 except Exception as err:
                     return t_result.Exception
             else:
@@ -731,6 +830,7 @@ class Table:
 
     def raw(self, rawstring):
         return rawstring
+
 
     def clear(self):
         self.table_where = []
@@ -773,20 +873,23 @@ class Table:
 
         return self
 
-
     def first(self):
         self.get()
         return self.result[0]
 
     def get(self):
+        #print(self.table_select)
         t_result = self.DB.query(self.table_select)
         self.Qstring = self.table_select
         self.error = t_result.Exception
         self.result = t_result.fetch()
         self.rowCount = t_result.count()
+        self.close()
         self.clear()
-
         return self
+
+    def close(self):
+        return self.DB.close()
 
     def set(self):
         return self.table_select
