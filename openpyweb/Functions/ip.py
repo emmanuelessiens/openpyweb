@@ -51,7 +51,7 @@ class ip:
                '0:0:0:0:0:0:0:0']
 
 
-        self.ip = ""
+        self._ip = ""
         self.hostname = ""
         self.city = ""
         self.region = ""
@@ -61,18 +61,17 @@ class ip:
         self.is_vpn = False
         return None
 
+    def ip(self):
+        self._ip = os.environ.get("REMOTE_ADDR")
+        return self._ip
+    
     def get(self):
 
         for header in self.HTTP_headers:
             if self.os(header) != "":
-                self.ip = '127.0.0.0' if self.os(header) in self.ips else self.os(header)
-                self.property(self.ip)
+                self._ip = self.ip()
+                self.property(self._ip)
             return self
-
-
-
-    def os(self, header):
-        return os.environ.get(header, '')
 
     def check(self, ip):
         for header in self.HTTP_proxy_header:

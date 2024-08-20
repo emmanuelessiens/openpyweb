@@ -75,7 +75,6 @@ class Variable:
 
         if para.find("?") > 0:
             parts = para.split('?')
-            print(parts)
             if len(parts) > 1:
                 uri = parts[0]
                 query_string = parts[1]

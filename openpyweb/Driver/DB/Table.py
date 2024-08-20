@@ -30,7 +30,6 @@ class Table:
         self.table_exist = ""
         self.table_notexist = ""
         self.table_where = []
-        self.table_whereand = []
         self.table_wherenotin = ""
         self.table_wherein = ""
         self.table_orwhere = []
@@ -42,8 +41,6 @@ class Table:
         self.table_offset = ""
         self.table_limit = ""
         self.table_join = []
-        self.table_leftjoin = []
-        self.table_rightjoin = []
         self.table_outerjoin = []
         self.table_whereBetween = ""
         self.table_whereNotBetween = ""
@@ -57,8 +54,6 @@ class Table:
         self.table_skip = ""
         self.table_take = ""
         self.table_having = ""
-        self.table_whereisnull = []
-        self.table_wherenotnull = []
         self.table_orOn = []
 
         return None
@@ -93,13 +88,8 @@ class Table:
         else:
             values = '*'
 
-        if self.table_where != "":
-            _and = " AND "
-
-            _where = ""
-        else:
-            _and = ""
-            _where = " WHERE "
+        _and = " AND "
+        _where = " WHERE "
 
         if len(self.table_orwhere) > 0:
             _or = " OR " if _where != "WHERE" else ''
@@ -110,7 +100,7 @@ class Table:
 
         value = value if value != "" else ""
 
-        self.table_select = "SELECT {value}{distinct}{values}{max}{min}{count}{avg} FROM {table}{exists}{notexist}{join}{where}{whereand}{whereisnull}{wherenotnull}{whereBetween}{whereNotBetween}{wherenotin}{orwhere}{groupBy}{having}{orderBy}{limit}{take}".format(
+        self.table_select = "SELECT {value}{distinct}{values}{max}{min}{count}{avg} FROM {table}{exists}{notexist}{join}{where}{whereBetween}{whereNotBetween}{wherenotin}{orwhere}{groupBy}{having}{orderBy}{limit}{take}".format(
             distinct=self.table_distinct,
             value=','.join(value) if self.table_count == "" else '',
             values=values if self.table_count == "" else '',
@@ -120,14 +110,11 @@ class Table:
             avg=self.table_avg,
             table=self.table,
             exists=self.table_exist,
-            whereBetween=str(" WHERE") + self.table_whereBetween if len(self.table_whereBetween) > 0 else '',
-            whereand=" ".join(self.table_whereand) if len(self.table_whereand) > 0 else '',
-            whereNotBetween=str(" WHERE") + self.table_whereNotBetween if len(self.table_whereNotBetween) > 0 else '',
+            whereBetween=str(_where) + self.table_whereBetween if len(self.table_whereBetween) > 0 else '',
+            whereNotBetween=str(_where) + self.table_whereNotBetween if len(self.table_whereNotBetween) > 0 else '',
             notexist=self.table_notexist,
             join=" ".join(self.table_join),
-            whereisnull=str(" WHERE") + str(''.join(self.table_whereisnull)) if len(self.table_whereisnull) > 0 else '',
-            wherenotnull=str(" WHERE") + str(''.join(self.table_wherenotnull)) if len(self.table_wherenotnull) > 0 else '',
-            where=str(" WHERE") + str(_and.join(self.table_where)) if len(self.table_where) > 0 else '',
+            where=str(_where) + str(_and.join(self.table_where)) if len(self.table_where) > 0 else '',
             wherenotin=str(_where) + str(_and) + str(self.table_wherenotin) if len(self.table_wherenotin) > 0 else '',
             orwhere=str(_or) + str(_or.join(self.table_orwhere)),
             groupBy=self.table_groupby,
@@ -136,6 +123,7 @@ class Table:
             take= self.table_take,
             having= self.table_having
         )
+        
         return self
 
     def union(self, string):
@@ -175,9 +163,18 @@ class Table:
         self.table_distinct = "DISTINCT {}".format(column=column)
         return self
 
-    def whereAnd(self, variable="", sign="", string=""):
+    def whereAnd(self, *variable):
+        if len(variable) > 2:
+            variables = variable[0]
+            sign = variable[1]
+            string = variable[2]
+        else:
+            variables = variable[0]
+            sign = '='
+            string = variable[1]
+
         string_type = "'{string}'".format(string=string) if (type(string) == str) == True else string
-        self.table_whereand.append(" AND {variable} {sign} {string}".format(variable=str(self.prefix)+str(variable), sign=sign, string=string_type))
+        self.table_where.append(" {variable} {sign} {string}".format(variable=str(self.prefix)+str(variables), sign=sign, string=string_type))
         return self
 
     def whereIn(self, variable, list=[]):
@@ -312,17 +309,16 @@ class Table:
 
     def whereNull(self, string):
 
-        self.table_whereisnull = " {string} IS NULL".format(string=string)
+        self.table_where.append(" {string} IS NULL".format(string=str(self.prefix)+str(string)))
         return self
 
-
-
     def whereNotNull(self, string):
-        self.table_wherenotnull = "  {string} IS NOT NULL".format(string=string)
+        self.table_where.append(" {string} IS NOT NULL".format(string=str(self.prefix)+str(string)))
         return self
 
     def delete(self):
         self.table_delete = "DELETE FROM {table} {where}".format(table=self.table, where=str(" WHERE") + str(" AND".join(self.table_where)))
+        print(self.table_delete)
         t_result = self.DB.query(self.table_delete)
 
         if t_result.Exception == "":
@@ -346,7 +342,6 @@ class Table:
 
     def orHavingRaw(self, values):
         orHavingRaw = " HAVING {values}".format(values=' OR '.join(values))
-
         return orHavingRaw
 
 
@@ -600,7 +595,7 @@ class Table:
 
 
 
-        self.table_select = "SELECT {distinct}{values}{max}{min}{count}{avg} FROM {table}{exists}{notexist}{join}{where}{whereisnull}{wherenotnull}{whereBetween}{whereNotBetween}{wherenotin}{orwhere}{groupBy}{having}{orderBy}{limit}{take}".format(
+        self.table_select = "SELECT {distinct}{values}{max}{min}{count}{avg} FROM {table}{exists}{notexist}{join}{where}{whereBetween}{whereNotBetween}{wherenotin}{orwhere}{groupBy}{having}{orderBy}{limit}{take}".format(
             distinct=self.table_distinct,
 
             values=values if self.table_count == "" else '',
@@ -614,8 +609,6 @@ class Table:
             whereNotBetween=str(" WHERE") + self.table_whereNotBetween if len(self.table_whereNotBetween) > 0 else '',
             notexist=self.table_notexist,
             join=" ".join(self.table_join),
-            whereisnull=str(" WHERE") + str(''.join(self.table_whereisnull)) if len(self.table_whereisnull) > 0 else '',
-            wherenotnull=str(" WHERE") + str(''.join(self.table_wherenotnull)) if len(self.table_wherenotnull) > 0 else '',
             where=str(" WHERE") + str(_and.join(self.table_where)) if len(self.table_where) > 0 else '',
             wherenotin=str(_where) + str(_and) + str(self.table_wherenotin) if len(self.table_wherenotin) > 0 else '',
             orwhere=str(_or) + str(_or.join(self.table_orwhere)),
@@ -637,7 +630,6 @@ class Table:
                 for ks, vs in v.items():
                     if num > 0:
                         kd.update({ks: vs})
-                ++num
                 kl.append(kd)
 
             return kl
@@ -705,7 +697,12 @@ class Table:
 
                 table_update ="UPDATE {table} SET {column} {where}".format(table=str(self.table),  column=lcolumn, where=str(" WHERE") + str("AND".join(self.table_where)) if len(self.table_where) > 0 else '')
                 t_result = self.DB.query(table_update)
-                return t_result.save() if t_result.Exception == "" else t_result.Exception
+                if t_result.Exception == "":
+                    _result = t_result.save()
+                    self.close()
+                    return _result
+                else:
+                    t_result.Exception
             else:
                 return "Empty Data"
         else:
@@ -759,7 +756,7 @@ class Table:
                 kvariables = ' , '.join(ksys)
 
                 table_insert = "INSERT INTO  {table}  ({column}) VALUES ({kvariables}) ".format(table=str(self.table), column=lcolumn, kvariables=kvariables)
-
+                
                 if len(value) == 1:
                     t_result = self.DB.query(table_insert, value[0])
                 else:
@@ -836,13 +833,7 @@ class Table:
         self.table_where = []
         self.table_orwhere = []
         self.table_join = []
-        self.table_leftjoin = []
-        self.table_rightjoin = []
         self.table_outerjoin = []
-        self.table_whereisnull = []
-        self.table_wherenotnull = []
-
-        self.table_whereand = []
         self.table_select = ""
         self.table_whereBetween = ""
         self.table_whereNotBetween = ""
@@ -878,7 +869,6 @@ class Table:
         return self.result[0]
 
     def get(self):
-        #print(self.table_select)
         t_result = self.DB.query(self.table_select)
         self.Qstring = self.table_select
         self.error = t_result.Exception
