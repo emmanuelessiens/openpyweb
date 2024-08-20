@@ -89,9 +89,9 @@ class App(env, Config, Variable):
     def getPath(self):
         return self.getpath
 
-    def runs(self, formData=None, cook=None):
+    def runs(self, formData=None, serverobj=None):
         self.formData = formData
-        self.server_obj = cook
+        self.server_obj = serverobj
         return self.initial()
 
     def initial(self):
@@ -298,7 +298,7 @@ class App(env, Config, Variable):
     def strMethod(self, p, c=None, mv=None):
         gmodule = []
         Request = self.Request(prform=self.formData)
-        Session = self.Session(prsee=self.server_obj) #prsee=self.server_obj
+        Session = self.Session(prsee=self.server_obj)
 
         try:
             m = mv.split("?")[0]
@@ -337,7 +337,7 @@ class App(env, Config, Variable):
             Log(os.path.join(p,'%s.py'%c)).critical(err)
             return self.errorP('404')
 
-    def redirect(self, location='/', link=False, code="307", lang=False):
+    def redirect(self, location='/', link=False, code="307", lang=False, method="GET"):
 
         if self.out("SERVER_SOFTWARE") == AUTHOR:
 
@@ -345,8 +345,7 @@ class App(env, Config, Variable):
                 location_d = self.URL(location, lang)
             else:
                 location_d = location
-            self.put(status=code)
-            self.put(redirect_url=location_d)
+            self.put(redirect_url=location_d, status=code, method=method)
             return code, location_d
         else:
 
@@ -357,17 +356,17 @@ class App(env, Config, Variable):
 
             self.default("REDIRECT_STATUS", code)
             self.default("REDIRECT_REDIRECT_STATUS", code)
+            self.default("REQUEST_METHOD", method)
             print("Location: {location}".format(location=location_d))
             print()
 
-    def referer(self, location='/', link=False, code="301", lang=False):
+    def referer(self, location='/', link=False, code="301", lang=False, method="GET"):
         if self.out("SERVER_SOFTWARE") == AUTHOR:
             if link == True:
                 location_d = self.URL(location, lang)
             else:
                 location_d = location
-            self.put(status=code)
-            self.put(referral=self.out('HTTP_REFERER', location_d))
+            self.put(referral=self.out('HTTP_REFERER', location_d), redirect_url=location_d, status=code, method=method)
             return code, self.out('HTTP_REFERER', location_d) if self.out('HTTP_REFERER', location_d) != "" else location_d
 
         else:
@@ -377,6 +376,7 @@ class App(env, Config, Variable):
                 location_d = location
             self.default("REDIRECT_STATUS", code)
             self.default("REDIRECT_REDIRECT_STATUS", code)
+            self.default("REQUEST_METHOD", method)
             print("Location: {location}".format(location=self.out('HTTP_REFERER', location_d)))
             print()
 

@@ -16,7 +16,7 @@ class env:
         return None
 
     def _e(self):
-        
+
 
         if os.path.isdir(os.path.join(os.getcwd(), 'public')):
             host = os.getcwd()  # os.path.dirname(os.getcwd())
@@ -24,9 +24,7 @@ class env:
         else:
             host = os.path.dirname(os.getcwd())
 
-        DS = str("/")
-
-        envpath = host + DS + ".env"
+        envpath = os.path.join(host, ".env")
 
         if os.path.isfile(envpath) == True:
 

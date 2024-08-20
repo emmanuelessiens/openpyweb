@@ -20,7 +20,9 @@ class Variable:
         uri, query_string = "", ""  # path.split('/')[-1]+str(para)
 
         host = str(host) if str(host) != "" else os.environ.get("HTTP_HOST", "")
-        para_v = "/"+str(os.path.basename(os.getcwd()))+str(para) if str(para) != "" else os.environ.get("REQUEST_URI", "")
+        para_v = "{}{}".format(host, para) if str(para) != "" else os.environ.get("REQUEST_URI", "")
+
+        #"/"+str(os.path.basename(os.getcwd()))+str(para) if str(para) != "" else os.environ.get("REQUEST_URI", "")
 
         port = str(port) if str(port) != "" else os.environ.get("SERVER_PORT", "")
 
@@ -31,6 +33,7 @@ class Variable:
         http_connect  = str(http_connect) if str(http_connect) != "" else os.environ.get("HTTP_CONNECTION", "")
 
         http_user_agt = str(http_user_agt) if str(http_user_agt) != "" else os.environ.get("HTTP_USER_AGENT", "")
+
 
         http_encode = str(http_encode) if str(http_encode) != "" else os.environ.get("HTTP_ACCEPT_ENCODING", "")
 
@@ -50,12 +53,17 @@ class Variable:
 
         server_ver = str(server_ver) if server_ver != "" else os.environ.get("SERVER_VERSION", "")
 
-        v_referral = ""
+        _httpstring = "https://" if ssl_v == 'on' else "http://"
+        _portstring = "" if str(port) in ["80", "8080"] else ":{}".format(port)
+        redirect_url = '{}{}{}{}'.format(_httpstring, host, _portstring, para)
+
         if os.environ.get("HTTP_REFERER", "") != "":
-            if para != referral:
-                v_referral = referral
+            if redirect_url == os.environ.get("HTTP_REFERER", ""):
+                v_referral = os.environ.get("HTTP_REFERER", "")
+            else:
+                v_referral = redirect_url
         else:
-            v_referral = para
+            v_referral = redirect_url
 
         server_proto = str(server_proto) if str(
             server_proto) != "" else os.environ.get("SERVER_PROTOCOL", "")
@@ -65,9 +73,7 @@ class Variable:
 
 
 
-        redirect_url = str(redirect_url) if str(redirect_url) != "" else os.environ.get("REDIRECT_URL", "")
-
-        if para.find("?") == True:
+        if para.find("?") > 0:
             parts = para.split('?')
             if len(parts) > 1:
                 uri = parts[0]

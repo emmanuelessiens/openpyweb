@@ -59,7 +59,8 @@ varb = Variable()
 port = 80
 
 
-global response_code
+global response_code, mimetype
+mimetype = 'text/html'
 redirect_code = ["500", "400", "404", "405", "451", "301", "302", "307"]
 def load_source(modname, filename):
     import types
@@ -81,8 +82,6 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
 
         def do_GET(self):
             path_info = self.path
-            _cookies = self
-
             form = cgi.FieldStorage(
                 fp=self.rfile,
                 headers=self.headers,
@@ -99,15 +98,15 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                     vpath = os.path.join("public", "home.py")
                 elif os.path.isfile(os.path.join(str(path),"public", "default.py")) == True:
                     vpath = os.path.join("public", "default.py")
+
                 try:
                     App = im.load_source('App.App', os.path.join(path,vpath))
                 except Exception as e:
                     App = load_source('App.App', os.path.join(path,vpath))
+
                 self._App = App.App()
-
-
-                mimetype = 'text/html'
                 if "." not in path_info:
+
                     self._App.put(method="GET", accept_lang=self.headers["Accept-Language"],
                             http_connect=self.headers["Connection"], http_user_agt=self.headers["User-Agent"],
                             http_encode=self.headers["Accept-Encoding"], path=path, host=host, port=port,
@@ -115,18 +114,19 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                                 0], remoter_port=self.client_address[1],
                             script_file=os.path.join(path, vpath), server_proto=server_pro, server_ver=self.server_version,
                             protocol_ver=self.protocol_version)
-                    runs_response = self._App.runs(formData=form, cook=_cookies)
+
+                    runs_response = self._App.runs(formData=form, serverobj=self)
                     if isinstance(runs_response, tuple) == True:
-                        if str(runs_response[0]).isnumeric():
+
+                        if str(runs_response[0]).isnumeric() == True:
+
                             if runs_response[0] in redirect_code:
                                 self.redirect(runs_response[0], runs_response[1])
                             else:
                                 self.rendering(mimetype=mimetype, content=runs_response)
+
                         if len(runs_response) == 4:
                             self.setwriter(runs_response[1], runs_response[2], runs_response[3])
-
-
-
                     else:
                         self.rendering(mimetype=mimetype, content=runs_response)
 
@@ -149,8 +149,8 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                             App = im.load_source('App.App', os.path.join(path,vpath))
                         except:
                             App = load_source('App.App', os.path.join(path,vpath))
+
                         self._App = App.App()
-                        mimetype = 'text/html'
                         if "." not in path_info:
 
 
@@ -162,17 +162,19 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                                 path, vpath), server_proto=server_pro, server_ver=self.server_version,
                                 protocol_ver=self.protocol_version)
 
-                            runs_response = self._App.runs(formData=form, cook=_cookies)
+                            runs_response = self._App.runs(formData=form, serverobj=self)
 
                             if isinstance(runs_response, tuple) == True:
-                                if str(runs_response[0]).isnumeric():
+
+                                if str(runs_response[0]).isnumeric() == True:
+
                                     if runs_response[0] in redirect_code:
                                         self.redirect(runs_response[0], runs_response[1])
                                     else:
                                         self.rendering(mimetype=mimetype, content=runs_response)
+
                                 if len(runs_response) == 4:
                                     self.setwriter(runs_response[1], runs_response[2], runs_response[3])
-
 
                             else:
                                 self.rendering(mimetype=mimetype, content=runs_response)
@@ -218,7 +220,7 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
         def do_POST(self):
 
             path_info = self.path
-            _cookies = self
+
             form = cgi.FieldStorage(
                 fp=self.rfile,
                 headers=self.headers,
@@ -243,8 +245,6 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
             except:
                 App = load_source('App.App', os.path.join(path,vpath))
             self._App = App.App()
-
-            mimetype = 'text/html'
             if "." not in path_info :
 
 
@@ -254,20 +254,20 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
                             remoter_addr=self.client_address[0], remoter_port=self.client_address[1], script_file=os.path.join(path, vpath), server_proto=server_pro, server_ver=self.server_version,
                     protocol_ver=self.protocol_version)
 
-                runs_response = self._App.runs(formData=form, cook=_cookies)
+                runs_response = self._App.runs(formData=form, serverobj=self)
                 if isinstance(runs_response, tuple) == True:
-                    if str(runs_response[0]).isnumeric():
+                    if str(runs_response[0]).isnumeric() == True:
 
                         if runs_response[0] in redirect_code:
                             self.redirect(runs_response[0], runs_response[1])
                         else:
-                            self.rendering(mimetype=mimetype, code=200, content=self._App.runs(formData=form, cook=_cookies))
+                            self.rendering(mimetype=mimetype, code=200, content=self._App.runs(formData=form, serverobj=self))
                     else:
                         if len(runs_response) == 4:
                             self.setwriter(runs_response[1], runs_response[2], runs_response[3])
 
                 else:
-                    self.rendering(mimetype=mimetype, code=200, content=self._App.runs(formData=form, cook=_cookies))
+                    self.rendering(mimetype=mimetype, code=200, content=self._App.runs(formData=form, serverobj=self))
 
         def do_HEAD(self):
             self.do_GET()
@@ -342,16 +342,16 @@ def run(host="", path="", port=6060, server_pro="HTTP/1.1", ssl_ip="", ssl_port=
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 # print(ssock.version())
                 data = json.dumps(ssock.getpeercert())
-        varb.put("HTTPS", "on")
+        varb.put(ssl_v="on")
         vars_http = "https://"
         # print(ssock.getpeercert())
     except Exception as err:
         try:
             cert = ssl.get_server_certificate((hostname, int(portnumber)))
-            varb.put("HTTPS", "on")
+            varb.put(ssl_v="on")
             vars_http = "https://"
         except Exception as err:
-            varb.put("HTTPS", "off")
+            varb.put(ssl_v="off")
             vars_http = "http://"
 
     try:

@@ -8,12 +8,14 @@
 
 import sys
 import os
+from wsgiref import validate
 from openpyweb.Version import *
 from openpyweb.Log import Log
 from openpyweb.Config import Config
 from openpyweb.Core.env import env
 from openpyweb.Session import Session
 from openpyweb.util.Variable import Variable
+from openpyweb.Functions.validation import validation
 from .Core import Helpers
 
 h = Helpers
@@ -32,6 +34,7 @@ class Controllers(env, Config):
     def __init__(self):
 
         self.uri = self.url()
+        
 
         self.add(self._e())
 
@@ -217,20 +220,16 @@ class Controllers(env, Config):
 
     def url(self):
         osv = Variable()
+        validate = validation()
         url = osv.out('REQUEST_URI', "")
         http_s = osv.out("HTTP_HOST")
-        uri = ""
-        if osv.out("SERVER_SOFTWARE", "") == AUTHOR:
-
-            uri = url.split('/')[2:]
-
-        else:
-
-            if http_s == "127.0.0.1" or http_s == "localhost":
-                uri = url.split('/')[2:]
-            else:
-                uri = url.split('/')[1:]
-        return uri
+        port_s = osv.out("SERVER_PORT")
+        uri = url.split('/')
+        try:
+            _xuri = uri.index(http_s)
+            return uri[_xuri+1:]
+        except Exception as e: 
+            return uri
 
     def _getUri(self):
         return self.uri
@@ -255,8 +254,7 @@ class Controllers(env, Config):
         return self.routes
 
     def get_routes_param(self, params):
-            list_params = []
-            if os.path.isfile(host + "/" + "routes.py") == True:
+            if os.path.isfile(os.path.join(host, "routes.py")) == True:
                 sys.path.append(host)
                 import routes as route
                 param_v = {}

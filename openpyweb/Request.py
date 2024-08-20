@@ -24,17 +24,18 @@ class Request(Variable):
         self.Controllers = Controllers()
         self.para_vv ={}
         if self.out("SERVER_SOFTWARE") == AUTHOR:
-             self.attr = prform
+            self.attr = prform
         else:
             self.attr = cgi.FieldStorage()
         self.method = self.out('REQUEST_METHOD', '')
 
     def get(self, key=0, error=0):
-
-
         if 'GET' == self.method:
             if error == 1:
-                return self.attr
+                try:
+                    return self.attr
+                except Exception as e:
+                    return self.param()
 
             if key != 0:
                 try:
@@ -46,35 +47,31 @@ class Request(Variable):
                 except Exception as e:
                     return self.param(key)
             else:
-                return ""
-        else:
-
-            Log('').warning("advise use POST instead of GET")
-            return ""
+                try:
+                    return self.attr
+                except Exception as e:
+                    return self.param()
 
 
     def post(self, key=0, error=0):
-        try:
-            if 'POST' == self.method:
-                if error == 1:
+        if 'POST' == self.method:
+            if error == 1:
+                try:
                     return self.attr
+                except Exception as e:
+                    return None
 
-                if key != 0:
+            if key != 0:
+                try:
                     if (key in self.attr):
                         if self.attr.getvalue(key) != "":
                             return self.attr.getvalue(key)
                         else:
-                            return self.param(key)
-                    else:
-                        return self.param(key)
-                else:
-                    return ""
+                            return None
+                except Exception as e:
+                    return None
             else:
-                Log('').warning("advise use GET instead of POST")
-                return False
-        except Exception as err:
-            Log('').warning(err)
-            return err
+                return None
 
     def file(self, key=0, error=0):
         try:
@@ -85,13 +82,13 @@ class Request(Variable):
                 elif error == 1:
                     return self.attr
                 else:
-                    return ""
+                    return None
             else:
-                return ""
+                return None
 
         except Exception as err:
             Log('').warning(err)
-            return err
+            return None
 
     def all(self):
         if None is not self.attr.keys():
@@ -111,7 +108,6 @@ class Request(Variable):
         return _params
 
     def param(self, key=""):
-
         if len(self.Controllers._getParams()) > 0:
             self.para_vv = self.Controllers._getParams()
         else:
@@ -119,5 +115,5 @@ class Request(Variable):
         if key == "" or key == None:
             result = self.para_vv
         else:
-            result =  self.para_vv.get(key, '')
+            result =  self.para_vv.get(key, None)
         return result
