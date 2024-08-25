@@ -318,11 +318,11 @@ class Table:
 
     def delete(self):
         self.table_delete = "DELETE FROM {table} {where}".format(table=self.table, where=str(" WHERE") + str(" AND".join(self.table_where)))
-        print(self.table_delete)
         t_result = self.DB.query(self.table_delete)
 
         if t_result.Exception == "":
             _result = t_result.save()
+            self.clear()
             self.close()
             return  _result
         else:
@@ -699,6 +699,7 @@ class Table:
                 t_result = self.DB.query(table_update)
                 if t_result.Exception == "":
                     _result = t_result.save()
+                    self.clear()
                     self.close()
                     return _result
                 else:

@@ -312,35 +312,30 @@ class _Call(_Node):
 
 
         importlib._RELOADING
-
+        
         if os.path.isfile(path[0]) == True:
             md = importlib.import_module(self.callable, self.callable)
             ob = getattr(md, self.callable)
 
             if hasattr(ob(), '__call__') == True:
-
-                calls = ""
                 try:
                     newob = getattr(ob, ''.join(resolved_args).replace(" ", ""))
-                    calls = newob(**resolved_kwargs)
+                    return newob(**resolved_kwargs)
 
                 except Exception as err:
                     try:
                         newob = getattr(ob(), ''.join(resolved_args).replace(" ", ""))
-                        calls = newob(**resolved_kwargs)
+                        return newob(**resolved_kwargs)
                     except Exception as err:
                         try:
                             _cal = ob()
                             _new_cal = getattr(_cal, *resolved_args)
-                            calls =  _new_cal(**resolved_kwargs)
-
+                            return  _new_cal(**resolved_kwargs)
                         except Exception as err:
                             try:
-                                calls = ob(*resolved_args, **resolved_kwargs)
+                                return ob(*resolved_args, **resolved_kwargs)
                             except Exception as err:
                                 Log('').error(err)
-
-                return calls
             else:
                 raise TemplateError("'%s' is not a callable" % self.callable)
 
@@ -352,30 +347,34 @@ class _Call(_Node):
 
 
             if hasattr(ob(), '__call__'):
-
-                calls = ""
+                
                 try:
                     newob = getattr(ob, ''.join(resolved_args).replace(" ", ""))
-                    calls = newob(**resolved_kwargs)
+                    return newob(**resolved_kwargs)
                 except Exception as err:
-
                     try:
                         newob = getattr(ob(), ''.join(resolved_args).replace(" ", ""))
-                        calls = newob(**resolved_kwargs)
+                        return newob(**resolved_kwargs)
                     except Exception as err:
                         try:
                             _cal = ob()
                             _new_cal = getattr(_cal, *resolved_args)
-                            calls = _new_cal(**resolved_kwargs)
-
+                            return _new_cal(**resolved_kwargs)
+                            
                         except Exception as err:
-
                             try:
-                                calls = ob(*resolved_args, **resolved_kwargs)
-
+                                _cal = ob()
+                                _md = resolved_args[0]
+                                _new_cal = getattr(_cal, _md)
+                                resolved_args.remove(_md)
+                                return _new_cal(*resolved_args)
+                                
                             except Exception as err:
-                                Log('').error(err)
-                return calls
+                                try:
+                                    return ob(*resolved_args, **resolved_kwargs)
+                                except Exception as err:
+                                    Log('').error(err)
+                
             else:
                 raise TemplateError("'%s' is not a callable" % self.callable)
 
